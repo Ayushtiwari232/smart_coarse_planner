@@ -10,7 +10,7 @@ app = FastAPI(title="Smart Course Planner")
 def health():
     return {
         "status": "ok",
-        "message": "FastAPI is running inside Azure Functions"
+        "message": "FastAPI is running inside Azure Functions a"
     }
 
 

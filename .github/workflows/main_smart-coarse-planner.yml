@@ -12,7 +12,7 @@ on:
 
 env:
   AZURE_FUNCTIONAPP_PACKAGE_PATH: "." # set this to the path to your web app project, defaults to the repository root
-  PYTHON_VERSION: "3.13" # set this to the python version to use (supports 3.6, 3.7, 3.8)
+  PYTHON_VERSION: "3.12" # set this to the python version to use
 
 jobs:
   build:
@@ -28,10 +28,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install dependencies
-        run: |
-          pip install --target=".python_packages/lib/site-packages" -r requirements.txt
 
       # Optional: Add step to run tests here
 
@@ -70,3 +66,4 @@ jobs:
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_F44C1248F7174A13B4A9979AE5C10AA2 }}
           sku: "flexconsumption"
+          remote-build: true
