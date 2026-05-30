@@ -1,11 +1,10 @@
 from typing import Optional
+import traceback
 
 from fastapi import FastAPI, Query
-from services.filter_service import apply_filters
-from services.session_calculator_service import calculate_sessions
-from services.planner_service import plan_courses
 
-app = FastAPI(title="Smart Coarse Planner")
+app = FastAPI(title="Smart Course Planner")
+
 
 @app.get("/health")
 def health():
@@ -14,24 +13,40 @@ def health():
         "message": "FastAPI is running inside Azure Functions"
     }
 
+
 @app.get("/plan")
 def plan(
     input: Optional[str] = Query(None, description="SRL and WL identifier"),
 ):
-    # Step 1: Filter the SRL data
-    filter_result = apply_filters(input=input)
+    try:
+        # Import only when /plan is called, not when app starts
+        from services.filter_service import apply_filters
+        from services.session_calculator_service import calculate_sessions
+        from services.planner_service import plan_courses
 
-    # Step 2: Calculate session requirements from the filtered output
-    session_result = calculate_sessions(filtered_file=filter_result["output_file"])
+        filter_result = apply_filters(input=input)
 
-    # Step 3: Plan courses with LLM (trainer assignment + dates)
-    plan_result = plan_courses(filtered_file=filter_result["output_file"])
+        session_result = calculate_sessions(
+            filtered_file=filter_result["output_file"]
+        )
 
-    return {
-        "filter": filter_result,
-        "sessions": session_result,
-        "plan": plan_result,
-    }
+        plan_result = plan_courses(
+            filtered_file=filter_result["output_file"]
+        )
+
+        return {
+            "status": "success",
+            "filter": filter_result,
+            "sessions": session_result,
+            "plan": plan_result,
+        }
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
 
 
 if __name__ == "__main__":
