@@ -7,6 +7,12 @@ from services.planner_service import plan_courses
 
 app = FastAPI(title="Smart Coarse Planner")
 
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "message": "FastAPI is running inside Azure Functions"
+    }
 
 @app.get("/plan")
 def plan(
