@@ -4,8 +4,8 @@ import time
 import traceback
 import tiktoken
 import pandas as pd
-from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
+from prompts import get_course_planner_prompt
 from utils.llm_utils import get_llm_from_env
 
 
@@ -180,44 +180,7 @@ def plan_courses(session_data: dict) -> dict:
             trainer_leave_summary.values(), key=lambda trainer: trainer["trainer"]
         )
 
-        prompt = ChatPromptTemplate.from_messages(
-            [
-                (
-                    "system",
-                    """You are a training course planner. Your task is to schedule course sessions
-and assign trainers based on the following rules:
-
-1. Each course needs a specific number of sessions (provided below).
-2. Each session spans a number of consecutive working days (no_of_days provided).
-3. Trainers must be assigned based on priority order (priority_1 is most preferred,
-   then priority_2, etc.). Use the highest priority trainer who is available.
-4. A trainer can only teach one course at a time - no overlapping assignments.
-5. Sessions should be scheduled within the planning period: {period}.
-6. Only schedule on weekdays (Monday-Friday).
-7. Do not assign a trainer on any of their leave dates.
-8. If a course has no matching trainer in the priority list, pick the best available
-    trainer from the trainer list who is not on leave and not otherwise occupied.
-9. Spread sessions across the planning period when possible.
-10. If a course is not found in the schedule (sessions_needed is null), skip it.""",
-                ),
-                (
-                    "human",
-                    """Here are the courses that need sessions planned:
-
-{courses_json}
-
-Here is the trainer priority for each course (priority_1 is most preferred):
-
-{priority_json}
-
-Here are trainer leave dates. A trainer is unavailable on these dates:
-
-{trainer_leave_json}
-
-Please create a complete course plan assigning dates and trainers to each session.""",
-                ),
-            ]
-        )
+        prompt = get_course_planner_prompt()
 
         llm = get_llm_from_env()
         structured_llm = llm.with_structured_output(CoursePlan)
