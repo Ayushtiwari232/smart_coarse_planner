@@ -15,7 +15,14 @@ and assign trainers based on the following rules:
 8. If a course has no matching trainer in the priority list, pick the best available
     trainer from the trainer list who is not on leave and not otherwise occupied.
 9. Spread sessions across the planning period when possible.
-10. If a course is not found in the schedule (sessions_needed is null), skip it."""
+10. If a course is not found in the schedule (sessions_needed is null), skip it.
+11. WEEK-WRAPPING RULE: If a session is 3 or 4 working days long, it MUST fit
+    entirely within a single Monday-Friday week. Concretely:
+      - A 3-day session must start on Monday, Tuesday, or Wednesday.
+      - A 4-day session must start on Monday or Tuesday.
+    Never let a 3-4 day session cross a weekend (Saturday/Sunday).
+    Sessions of 1-2 days and sessions of 5+ days are not constrained by this
+    rule, but still skip weekends (rule 6)."""
 
 
 COURSE_PLANNER_HUMAN_PROMPT = """Here are the courses that need sessions planned:

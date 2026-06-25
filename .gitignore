@@ -31,3 +31,16 @@ dist/
 build/
 *.egg-info/
 *.egg
+
+# Azure Functions
+bin/
+obj/
+.python_packages/
+local.settings.json
+
+# Logs
+*.log
+
+# Byte-compiled
+*$py.class
+*.so

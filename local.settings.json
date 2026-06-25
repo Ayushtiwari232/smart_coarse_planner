@@ -3,6 +3,10 @@
     "Values": {
         "FUNCTIONS_WORKER_RUNTIME": "python",
         "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-        "AzureWebJobsFeatureFlags": "EnableWorkerIndexing"
+        "AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
+        "GPT5_MINI_API_KEY": "<your-azure-openai-api-key>",
+        "GPT5_MINI_ENDPOINT": "<your-azure-openai-endpoint>",
+        "GPT5_MINI_MODEL": "<your-deployment-name>",
+        "GPT5_MINI_API_VERSION": "2024-05-01-preview"
     }
 }

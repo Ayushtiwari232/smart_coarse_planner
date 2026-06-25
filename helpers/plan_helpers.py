@@ -1,5 +1,7 @@
 from typing import Optional, Dict, Any
 import base64
+import os
+import tempfile
 import threading
 import traceback
 import uuid
@@ -11,8 +13,18 @@ from fastapi.responses import FileResponse
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+# Static reference data bundled with the app (read-only is fine)
 INPUT_DIR = BASE_DIR / "data" / "input"
-OUTPUT_DIR = BASE_DIR / "data" / "output"
+# Writable directories — Azure Functions app directory may be read-only,
+# so uploads still go to %TEMP%, but generated output defaults to the
+# project's data/output folder for easy local inspection. Override with
+# SMART_PLANNER_OUTPUT_DIR (e.g. point to a temp path) when deploying.
+_TMP_BASE = Path(tempfile.gettempdir()) / "smart_planner"
+UPLOAD_INPUT_DIR = _TMP_BASE / "input"   # uploaded user files
+OUTPUT_DIR = Path(
+    os.environ.get("SMART_PLANNER_OUTPUT_DIR")
+    or (BASE_DIR / "data" / "output")
+)
 
 # Global in-memory job store.
 # Good for local/dev tunnel POC.
@@ -215,12 +227,12 @@ def start_plan_job(
     try:
         print(f"[PLAN] Request received: input={user_input}, file_name={file_name}")
 
-        INPUT_DIR.mkdir(parents=True, exist_ok=True)
+        UPLOAD_INPUT_DIR.mkdir(parents=True, exist_ok=True)
         OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
         if file_content_base64:
             safe_file_name = Path(file_name or "srl_and_wl.xlsx").name
-            input_file = INPUT_DIR / safe_file_name
+            input_file = UPLOAD_INPUT_DIR / safe_file_name
 
             file_bytes = _decode_excel_base64(file_content_base64)
             input_file.write_bytes(file_bytes)
@@ -238,7 +250,10 @@ def start_plan_job(
                 }
 
         else:
-            input_file = INPUT_DIR / "srl_and_wl.xlsx"
+            # Fallback: check writable upload dir first, then static bundled data
+            input_file = UPLOAD_INPUT_DIR / "srl_and_wl.xlsx"
+            if not input_file.exists():
+                input_file = INPUT_DIR / "srl_and_wl.xlsx"
             print(f"[PLAN] No uploaded file received. Using local fallback: {input_file}")
 
             if not input_file.exists():
@@ -376,7 +391,6 @@ def run_local(input_file: Optional[str] = None, user_input: Optional[str] = None
     from services.session_calculator_service import calculate_sessions
     from services.planner_service import plan_courses
 
-    INPUT_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     resolved = Path(input_file) if input_file else INPUT_DIR / "srl_and_wl.xlsx"

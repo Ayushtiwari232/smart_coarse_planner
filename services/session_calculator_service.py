@@ -1,13 +1,17 @@
 import math
 import os
+import tempfile
 import traceback
 
 import pandas as pd
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "input")
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "output")
+_DEFAULT_OUTPUT_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "data", "output")
+)
+OUTPUT_DIR = os.environ.get("SMART_PLANNER_OUTPUT_DIR") or _DEFAULT_OUTPUT_DIR
 
-FILTERED_FILE = "filtered_output.xlsx"
+FILTERED_FILE = "filtered_output_v1.xlsx"
 COURSE_SCHEDULE_FILE = "course_schedule_days.xlsx"
 
 MODALITY_VALUES = ["MODALITY IXR"]
@@ -80,17 +84,15 @@ def calculate_sessions(filtered_file: str = None) -> dict:
         result_df = pd.DataFrame(results)
 
         os.makedirs(OUTPUT_DIR, exist_ok=True)
-        output_path = os.path.join(OUTPUT_DIR, "session_requirements.xlsx")
+        output_path = os.path.join(OUTPUT_DIR, "session_requirements_v1.xlsx")
         result_df.to_excel(output_path, index=False)
         print(f"[SESSION] Saved {len(results)} courses to {output_path}")
 
         return {
             "courses": results,
-            "output_file": "session_requirements.xlsx",
+            "output_file": "session_requirements_v1.xlsx",
         }
     except Exception as e:
         print(f"[SESSION] ERROR: {e}")
-        print(f"[SESSION] Traceback: {traceback.format_exc()}")
-        raise
         print(f"[SESSION] Traceback: {traceback.format_exc()}")
         raise

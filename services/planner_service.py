@@ -1,10 +1,18 @@
 import json
 import os
+import tempfile
 import time
 import traceback
+from datetime import date, timedelta
+
 import tiktoken
 import pandas as pd
+from openpyxl import load_workbook
+from openpyxl.comments import Comment
+from openpyxl.styles import Alignment, Font, PatternFill
+from openpyxl.utils import get_column_letter
 from pydantic import BaseModel, Field
+
 from prompts import get_course_planner_prompt
 from utils.llm_utils import get_llm_from_env
 
@@ -18,7 +26,10 @@ def _count_tokens(text: str, model: str = "gpt-4o") -> int:
     return len(enc.encode(text))
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "input")
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "output")
+_DEFAULT_OUTPUT_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "data", "output")
+)
+OUTPUT_DIR = os.environ.get("SMART_PLANNER_OUTPUT_DIR") or _DEFAULT_OUTPUT_DIR
 
 TRAINER_LEAVE_FILE = "trainer_leave_dates_2026.xlsx"
 PRIORITY_FILE = "priority_to_train_list.xlsx"
@@ -142,6 +153,178 @@ def _build_leave_lookup(trainers: list[dict]) -> dict[str, dict]:
     return leave_lookup
 
 
+def _write_trainer_availability_sheet(
+    output_path: str,
+    trainers: list[dict],
+    sessions: list[dict],
+    priority_trainer_names: set[str],
+) -> None:
+    """Append a 'Trainer Availability' sheet to the plan workbook.
+
+    Rows = trainers, Columns = days in the planning period.
+    Cell colors:
+      - light blue        : trainer is assigned to a course on that day
+                            (cell shows course code; hover comment shows
+                            course name + session number)
+      - light red         : trainer is on leave
+      - very light green  : weekend (Sat/Sun)
+    """
+    LIGHT_BLUE = PatternFill(start_color="FFADD8E6", end_color="FFADD8E6", fill_type="solid")
+    LIGHT_RED = PatternFill(start_color="FFFFB6C1", end_color="FFFFB6C1", fill_type="solid")
+    VERY_LIGHT_GREEN = PatternFill(start_color="FFE8F5E9", end_color="FFE8F5E9", fill_type="solid")
+    HEADER_FILL = PatternFill(start_color="FF1F4E78", end_color="FF1F4E78", fill_type="solid")
+    HEADER_FONT = Font(bold=True, color="FFFFFFFF")
+    SESSION_FONT = Font(size=7, bold=True)
+    SESSION_ALIGNMENT = Alignment(horizontal="center", vertical="center", wrap_text=False)
+
+    # Determine date range from leave dates + session dates
+    all_dates: list[date] = []
+    for trainer in trainers:
+        for raw in trainer.get("leave_dates", []):
+            parsed = pd.to_datetime(raw, errors="coerce")
+            if not pd.isna(parsed):
+                all_dates.append(parsed.date())
+    for s in sessions:
+        for key in ("start_date", "end_date"):
+            parsed = pd.to_datetime(s.get(key), errors="coerce")
+            if not pd.isna(parsed):
+                all_dates.append(parsed.date())
+
+    if not all_dates:
+        print("[PLANNER] Skipping trainer availability sheet: no dates available")
+        return
+
+    # Use full calendar year(s) so the visualization always covers Jan–Dec
+    years = sorted({d.year for d in all_dates})
+    start_d = date(years[0], 1, 1)
+    end_d = date(years[-1], 12, 31)
+
+    date_list: list[date] = []
+    cursor = start_d
+    while cursor <= end_d:
+        date_list.append(cursor)
+        cursor += timedelta(days=1)
+
+    # Map normalized trainer name -> list of session info dicts
+    # Each dict: { start, end, course_code, course_name, session_number }
+    trainer_sessions: dict[str, list[dict]] = {}
+    for s in sessions:
+        norm = _normalize_trainer_name(s.get("trainer_name", ""))
+        if not norm:
+            continue
+        sd = pd.to_datetime(s.get("start_date"), errors="coerce")
+        ed = pd.to_datetime(s.get("end_date"), errors="coerce")
+        if pd.isna(sd) or pd.isna(ed):
+            continue
+        trainer_sessions.setdefault(norm, []).append(
+            {
+                "start": sd.date(),
+                "end": ed.date(),
+                "course_code": str(s.get("course_code", "") or "").strip(),
+                "course_name": str(s.get("course_name", "") or "").strip(),
+                "session_number": s.get("session_number"),
+            }
+        )
+
+    # Combine trainers from the leave file, priority file, and planned sessions
+    leave_lookup = _build_leave_lookup(trainers)
+    trainer_names: list[str] = []
+    seen: set[str] = set()
+
+    def _add_trainer(name: str) -> None:
+        cleaned = str(name).strip()
+        if not cleaned:
+            return
+        key = _normalize_trainer_name(cleaned)
+        if key in seen:
+            return
+        seen.add(key)
+        trainer_names.append(cleaned)
+
+    for trainer in trainers:
+        _add_trainer(trainer["trainer"])
+    for name in sorted(priority_trainer_names):
+        _add_trainer(name)
+    for s in sessions:
+        _add_trainer(s.get("trainer_name", ""))
+
+    # Append sheet to the existing workbook
+    wb = load_workbook(output_path)
+    if "Trainer Availability" in wb.sheetnames:
+        del wb["Trainer Availability"]
+    ws = wb.create_sheet("Trainer Availability")
+
+    # Header row
+    header_cell = ws.cell(row=1, column=1, value="Trainer")
+    header_cell.fill = HEADER_FILL
+    header_cell.font = HEADER_FONT
+    header_cell.alignment = Alignment(horizontal="center", vertical="center")
+
+    for col_idx, dt in enumerate(date_list, start=2):
+        cell = ws.cell(row=1, column=col_idx, value=dt.strftime("%Y-%m-%d"))
+        cell.fill = HEADER_FILL
+        cell.font = HEADER_FONT
+        cell.alignment = Alignment(textRotation=90, horizontal="center", vertical="center")
+
+    # Body rows
+    for row_idx, trainer_name in enumerate(trainer_names, start=2):
+        ws.cell(row=row_idx, column=1, value=trainer_name)
+
+        # Resolve leave dates via all aliases of this name
+        leave_set: set[date] = set()
+        for alias in _trainer_name_aliases(trainer_name):
+            record = leave_lookup.get(alias)
+            if not record:
+                continue
+            for raw in record.get("leave_dates", []):
+                parsed = pd.to_datetime(raw, errors="coerce")
+                if not pd.isna(parsed):
+                    leave_set.add(parsed.date())
+
+        # Resolve session ranges via all aliases
+        ranges: list[dict] = []
+        for alias in _trainer_name_aliases(trainer_name):
+            ranges.extend(trainer_sessions.get(alias, []))
+
+        for col_idx, dt in enumerate(date_list, start=2):
+            cell = ws.cell(row=row_idx, column=col_idx)
+            matching = [r for r in ranges if r["start"] <= dt <= r["end"]]
+            if matching:
+                cell.fill = LIGHT_BLUE
+                # Show course code(s) inside the cell (short text fits a 4-wide column)
+                codes = [r["course_code"] for r in matching if r["course_code"]]
+                if codes:
+                    cell.value = " / ".join(dict.fromkeys(codes))
+                    cell.font = SESSION_FONT
+                    cell.alignment = SESSION_ALIGNMENT
+                # Hover comment shows full course name + session number
+                comment_lines = []
+                for r in matching:
+                    code = r["course_code"] or "?"
+                    name = r["course_name"] or "(unknown course)"
+                    session_no = r["session_number"]
+                    suffix = f" — Session {session_no}" if session_no else ""
+                    comment_lines.append(f"{code}: {name}{suffix}")
+                if comment_lines:
+                    comment = Comment("\n".join(comment_lines), "Planner")
+                    comment.width = 260
+                    comment.height = 20 + 14 * len(comment_lines)
+                    cell.comment = comment
+            elif dt in leave_set:
+                cell.fill = LIGHT_RED
+            elif dt.weekday() >= 5:
+                cell.fill = VERY_LIGHT_GREEN
+
+    # Layout polish
+    ws.column_dimensions["A"].width = 28
+    for col_idx in range(2, len(date_list) + 2):
+        ws.column_dimensions[get_column_letter(col_idx)].width = 4
+    ws.row_dimensions[1].height = 90
+    ws.freeze_panes = "B2"
+
+    wb.save(output_path)
+
+
 def plan_courses(session_data: dict) -> dict:
     """Main planning function:
     1. Use pre-computed session requirements
@@ -215,13 +398,28 @@ def plan_courses(session_data: dict) -> dict:
         result_df = pd.DataFrame(rows)
 
         os.makedirs(OUTPUT_DIR, exist_ok=True)
-        output_path = os.path.join(OUTPUT_DIR, "course_plan.xlsx")
+        output_path = os.path.join(OUTPUT_DIR, "course_plan_v1.xlsx")
         result_df.to_excel(output_path, index=False)
         print(f"[PLANNER] Saved to {output_path}")
 
+        # Step 5: Append trainer availability visualization sheet
+        try:
+            print("[PLANNER] Step 5: Writing trainer availability sheet...")
+            _write_trainer_availability_sheet(
+                output_path=output_path,
+                trainers=trainers,
+                sessions=rows,
+                priority_trainer_names=_priority_trainer_names(priority_df),
+            )
+            print("[PLANNER] Trainer availability sheet written")
+        except Exception as availability_error:
+            # Don't fail the whole job just because the visualization failed.
+            print(f"[PLANNER] WARNING: Could not write availability sheet: {availability_error}")
+            print(traceback.format_exc())
+
         return {
             "total_sessions_planned": len(result.sessions),
-            "output_file": "course_plan.xlsx",
+            "output_file": "course_plan_v1.xlsx",
             "plan": rows,
         }
     except Exception as e:

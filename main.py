@@ -1,4 +1,6 @@
 from typing import Optional
+import base64
+from pathlib import Path
 
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -7,6 +9,8 @@ from helpers import get_plan_file_response, get_plan_status, run_local, start_pl
 
 
 app = FastAPI(title="Smart Course Planner")
+
+DEFAULT_INPUT_FILE = Path(__file__).resolve().parent / "data" / "input" / "srl_and_wl.xlsx"
 
 
 class PlanRequest(BaseModel):
@@ -35,11 +39,37 @@ def plan(req: PlanRequest):
       "input": ""
     }
 
+    If `file_content_base64` is not provided, the endpoint falls back to
+    `data/input/srl_and_wl.xlsx`, base64-encodes it, and uses that.
+
     This endpoint returns quickly with job_id and poll_url.
     """
+    file_name = req.file_name
+    file_content_base64 = req.file_content_base64
+
+    if not file_content_base64:
+        if not DEFAULT_INPUT_FILE.exists():
+            return {
+                "status": "error",
+                "message": (
+                    "file_content_base64 not provided and default fallback file "
+                    "not found"
+                ),
+                "expected_file": str(DEFAULT_INPUT_FILE),
+            }
+
+        print(
+            f"[PLAN] file_content_base64 missing. "
+            f"Loading and encoding fallback file: {DEFAULT_INPUT_FILE}"
+        )
+        file_bytes = DEFAULT_INPUT_FILE.read_bytes()
+        file_content_base64 = base64.b64encode(file_bytes).decode("ascii")
+        if not file_name:
+            file_name = DEFAULT_INPUT_FILE.name
+
     return start_plan_job(
-        file_name=req.file_name,
-        file_content_base64=req.file_content_base64,
+        file_name=file_name,
+        file_content_base64=file_content_base64,
         user_input=req.input,
     )
 

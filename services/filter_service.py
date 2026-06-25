@@ -1,9 +1,13 @@
 import os
+import tempfile
 import traceback
 import pandas as pd
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "input")
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "output")
+_DEFAULT_OUTPUT_DIR = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "data", "output")
+)
+OUTPUT_DIR = os.environ.get("SMART_PLANNER_OUTPUT_DIR") or _DEFAULT_OUTPUT_DIR
 
 INPUT_FILE = "srl_and_wl.xlsx"
 
@@ -26,7 +30,7 @@ def apply_filters(input: str = None, input_file: str = None) -> dict:
         ]
         print(f"[FILTER] Filtered to {len(filtered_df)} rows")
 
-        output_filename = f"filtered_{input}.xlsx" if input else "filtered_output.xlsx"
+        output_filename = f"filtered_{input}_v1.xlsx" if input else "filtered_output_v1.xlsx"
         output_path = os.path.join(OUTPUT_DIR, output_filename)
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         filtered_df.to_excel(output_path, index=False)
