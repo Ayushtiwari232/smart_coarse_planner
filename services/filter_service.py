@@ -30,7 +30,7 @@ def apply_filters(input: str = None, input_file: str = None) -> dict:
         ]
         print(f"[FILTER] Filtered to {len(filtered_df)} rows")
 
-        output_filename = f"filtered_{input}_v1.xlsx" if input else "filtered_output_v1.xlsx"
+        output_filename = f"filtered_{input}_v3.xlsx" if input else "filtered_output_v3.xlsx"
         output_path = os.path.join(OUTPUT_DIR, output_filename)
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         filtered_df.to_excel(output_path, index=False)
