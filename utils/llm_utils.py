@@ -4,7 +4,7 @@ import os
 
 load_dotenv()
 
-def get_llm_from_env(prefix: str = "GPT5_MINI", temperature: float = 1) -> AzureChatOpenAI:
+def get_llm_from_env(prefix: str = "GPT5_NANO", temperature: float = 1) -> AzureChatOpenAI:
     """
     Create an AzureChatOpenAI client using a specific set of environment variables,
     allowing support for multiple models.
