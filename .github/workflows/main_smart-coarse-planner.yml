@@ -82,11 +82,3 @@ jobs:
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_F44C1248F7174A13B4A9979AE5C10AA2 }}
           sku: "flexconsumption"
           remote-build: true
-- name: Setup Python version
-       uses: actions/setup-python@v5
-       with:
-         python-version: ${{ env.PYTHON_VERSION }}
-     - name: Install dependencies
-       run: pip install -r requirements.txt --target=".python_packages/lib/site-packages"
-     - name: Zip artifact for deployment
-       run: zip -r release.zip . -x "venv/*"
