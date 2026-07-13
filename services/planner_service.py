@@ -32,11 +32,15 @@ _DEFAULT_OUTPUT_DIR = os.path.abspath(
 )
 OUTPUT_DIR = os.environ.get("SMART_PLANNER_OUTPUT_DIR") or _DEFAULT_OUTPUT_DIR
 
-TRAINER_LEAVE_FILE = "trainer_leave_dates_2026.xlsx"
+TRAINER_LEAVE_FILE = "trainer_holidays_sep_to_dec_2026.xlsx"
 PRIORITY_FILE = "priority_to_train_list.xlsx"
 LOCATION_FILE = "Smart course planner Trainer per location.xlsx"
 TRAINERS_JSON_FILE = "trainers.json"
 COURSE_SCHEDULE_FILE = "course_schedule_days.xlsx"
+
+# Planning period: September to December 2026
+PLANNING_START = date(2026, 9, 1)
+PLANNING_END = date(2026, 12, 31)
 
 
 # --- Pydantic models for structured LLM output ---
@@ -57,26 +61,28 @@ class CoursePlan(BaseModel):
 
 
 def _load_trainer_leave_dates() -> tuple[list[dict], str]:
-    """Load trainer leave dates from trainer_leave_dates_2026.xlsx."""
+    """Load trainer leave/holiday dates from trainer_holidays_sep_to_dec_2026.xlsx."""
     path = os.path.join(INPUT_DIR, TRAINER_LEAVE_FILE)
     df = pd.read_excel(path)
 
     trainers = []
-    all_leave_dates = []
     for _, row in df.iterrows():
         trainer_name = row.get("Trainer Name")
         if pd.isna(trainer_name):
             continue
 
-        raw_leave_dates = row.get("Leave Dates")
+        raw_leave_dates = row.get("Holiday / Leave Dates (2026)")
         leave_dates = []
         if not pd.isna(raw_leave_dates):
             for raw_date in str(raw_leave_dates).split(","):
-                parsed_date = pd.to_datetime(raw_date.strip(), errors="coerce")
+                raw_date = raw_date.strip()
+                # Format is "09 September" — append year 2026 for parsing
+                parsed_date = pd.to_datetime(
+                    f"{raw_date} 2026", format="%d %B %Y", errors="coerce"
+                )
                 if not pd.isna(parsed_date):
                     leave_dates.append(parsed_date.strftime("%Y-%m-%d"))
 
-        all_leave_dates.extend(leave_dates)
         trainers.append(
             {
                 "trainer": str(trainer_name).strip(),
@@ -84,14 +90,7 @@ def _load_trainer_leave_dates() -> tuple[list[dict], str]:
             }
         )
 
-    years = sorted({pd.to_datetime(date).year for date in all_leave_dates})
-    if len(years) == 1:
-        period = f"{years[0]}-01-01 to {years[0]}-12-31"
-    elif years:
-        period = f"{min(all_leave_dates)} to {max(all_leave_dates)}"
-    else:
-        period = ""
-
+    period = f"{PLANNING_START} to {PLANNING_END}"
     return trainers, period
 
 
@@ -640,8 +639,16 @@ def _write_lab_availability_sheet(output_path: str, sessions: list[dict]) -> Non
         print("[PLANNER] No lab data to write – skipping Lab Availability sheet")
         return
 
-    # Group labs by location
+    # Group labs by location, ensuring all location groups from trainer data are present
     loc_labs: dict[str, list[str]] = {}
+    # Pre-populate all known location groups (same as trainer sheet) in order
+    all_locations = list(dict.fromkeys(
+        info["location"] for info in location_lookup.values() if info.get("location")
+    ))
+    for loc in all_locations:
+        loc_labs.setdefault(loc, [])
+    loc_labs.setdefault("Others", [])
+    # Assign labs to their location groups
     for lab in sorted(lab_locations):
         loc = lab_locations[lab]
         loc_labs.setdefault(loc, []).append(lab)
@@ -789,10 +796,8 @@ def plan_courses(session_data: dict) -> dict:
         trainers, leave_period = _load_trainer_leave_dates()
         priority_df = _load_trainer_priority()
 
-        # Use the planning quarter from trainers.json (e.g. Q3 2026) rather than the
-        # full leave-dates year, so the LLM schedules within the right quarter.
-        json_start, json_end = _get_planning_period_from_json()
-        period = f"{json_start} to {json_end}" if json_start and json_end else leave_period
+        # Use the Sep-Dec 2026 planning period
+        period = f"{PLANNING_START} to {PLANNING_END}"
         print(f"[PLANNER] Loaded leave dates for {len(trainers)} trainers, planning period: {period}")
 
         # Step 3: Build prompt context
@@ -879,7 +884,7 @@ def plan_courses(session_data: dict) -> dict:
 
         return {
             "total_sessions_planned": len(result.sessions),
-            "output_file": "course_plan_v3.xlsx",
+            "output_file": "course_plan_v4.xlsx",
             "plan": rows,
         }
     except Exception as e:
