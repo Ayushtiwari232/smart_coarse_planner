@@ -21,10 +21,10 @@ INPUT_DIR = BASE_DIR / "data" / "input"
 # SMART_PLANNER_OUTPUT_DIR (e.g. point to a temp path) when deploying.
 _TMP_BASE = Path(tempfile.gettempdir()) / "smart_planner"
 UPLOAD_INPUT_DIR = _TMP_BASE / "input"   # uploaded user files
-OUTPUT_DIR = Path(
-    os.environ.get("SMART_PLANNER_OUTPUT_DIR")
-    or (BASE_DIR / "data" / "output")
-)
+
+OUTPUT_DIR = _TMP_BASE / "output"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
 
 # Global in-memory job store.
 # Good for local/dev tunnel POC.
@@ -243,8 +243,8 @@ def _run_plan(job_id: str, input_file: Path, user_input: Optional[str]) -> None:
 
         
         _save_job(
-        job_id,
-    {
+            job_id,
+            {
                 "status": "error",
                 "error": str(e),
                 "traceback": traceback.format_exc(),
@@ -326,7 +326,7 @@ def start_plan_job(
                 "started_at": datetime.now().isoformat(timespec="seconds"),
             }
         )
-
+        print(f"[PLAN] Saved job record: {_job_file(job_id)}")
         thread = threading.Thread(
             target=_run_plan,
             args=(job_id, input_file, user_input),
