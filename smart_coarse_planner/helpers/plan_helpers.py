@@ -8,7 +8,7 @@ import uuid
 import zipfile
 from datetime import datetime
 from pathlib import Path
-import azure.functions as func
+
 from fastapi.responses import FileResponse
 
 
@@ -379,17 +379,11 @@ def get_plan_file_response(job_id: str) -> dict | FileResponse:
             "job_id": job_id,
         }
 
-
-    with open(file_path, "rb") as f:
-        data = f.read()
-
-    return func.HttpResponse(
-        body=data,
-        status_code=200,
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={
-            "Content-Disposition": f'attachment; filename="{file_name}"'
- 
+    return FileResponse(
+        path=file_path,
+        filename=file_name,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
 
 
 def run_local(input_file: Optional[str] = None, user_input: Optional[str] = None) -> dict:
