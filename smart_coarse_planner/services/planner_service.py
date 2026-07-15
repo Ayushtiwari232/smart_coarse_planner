@@ -13,7 +13,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 from pydantic import BaseModel, Field
 
-from prompts import get_course_planner_prompt
+from smart_coarse_planner.Test.prompts import get_course_planner_prompt
 from utils.llm_utils import get_llm_from_env
 
 
