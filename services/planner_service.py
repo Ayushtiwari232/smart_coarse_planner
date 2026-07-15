@@ -779,6 +779,324 @@ def _write_lab_availability_sheet(output_path: str, sessions: list[dict]) -> Non
     wb.save(output_path)
 
 
+def _write_course_overview_sheet(
+    output_path: str, courses: list[dict], sessions: list[dict]
+) -> None:
+    """Append a 'Course Overview' sheet with demand data and missed courses.
+
+    Columns:
+      Course Code | Course Name | Duration (Days) | Total Students |
+      Sessions Needed | Sessions Planned | Sessions Missed | Missed Due to Timeline
+    """
+
+    HEADER_FILL = PatternFill(start_color="FF1F4E78", end_color="FF1F4E78", fill_type="solid")
+    HEADER_FONT = Font(bold=True, color="FFFFFFFF")
+    MISSED_FILL = PatternFill(start_color="FFFFCCCC", end_color="FFFFCCCC", fill_type="solid")
+    ALIGN_CENTER = Alignment(horizontal="center", vertical="center")
+
+    # Count sessions actually planned per course code
+    planned_counts: dict[str, int] = {}
+    for s in sessions:
+        code = str(s.get("course_code", "")).strip()
+        if code:
+            planned_counts[code] = planned_counts.get(code, 0) + 1
+
+    # Build overview rows
+    overview_rows = []
+    for c in courses:
+        code = str(c.get("course_code", "")).strip()
+        name = str(c.get("course_title", "")).strip()
+        duration = c.get("no_of_days")
+        students = c.get("students_interested")
+        needed = c.get("sessions_needed")
+        planned = planned_counts.get(code, 0)
+        missed = max(0, (needed or 0) - planned) if needed else 0
+        missed_flag = "Yes" if missed > 0 else "No"
+
+        overview_rows.append({
+            "course_code": code,
+            "course_name": name,
+            "duration_days": duration,
+            "total_students": students,
+            "sessions_needed": needed,
+            "sessions_planned": planned,
+            "sessions_missed": missed,
+            "missed_due_to_timeline": missed_flag,
+        })
+
+    wb = load_workbook(output_path)
+    if "Course Overview" in wb.sheetnames:
+        del wb["Course Overview"]
+    ws = wb.create_sheet("Course Overview")
+
+    headers = [
+        "Course Code", "Course Name", "Duration (Days)", "Total Students",
+        "Sessions Needed", "Sessions Planned", "Sessions Missed",
+        "Missed Due to Timeline",
+    ]
+    for col_idx, header in enumerate(headers, start=1):
+        cell = ws.cell(row=1, column=col_idx, value=header)
+        cell.fill = HEADER_FILL
+        cell.font = HEADER_FONT
+        cell.alignment = ALIGN_CENTER
+
+    for row_idx, row_data in enumerate(overview_rows, start=2):
+        ws.cell(row=row_idx, column=1, value=row_data["course_code"])
+        ws.cell(row=row_idx, column=2, value=row_data["course_name"])
+        ws.cell(row=row_idx, column=3, value=row_data["duration_days"]).alignment = ALIGN_CENTER
+        ws.cell(row=row_idx, column=4, value=row_data["total_students"]).alignment = ALIGN_CENTER
+        ws.cell(row=row_idx, column=5, value=row_data["sessions_needed"]).alignment = ALIGN_CENTER
+        ws.cell(row=row_idx, column=6, value=row_data["sessions_planned"]).alignment = ALIGN_CENTER
+        missed_cell = ws.cell(row=row_idx, column=7, value=row_data["sessions_missed"])
+        missed_cell.alignment = ALIGN_CENTER
+        if row_data["sessions_missed"] > 0:
+            missed_cell.fill = MISSED_FILL
+        flag_cell = ws.cell(row=row_idx, column=8, value=row_data["missed_due_to_timeline"])
+        flag_cell.alignment = ALIGN_CENTER
+        if row_data["missed_due_to_timeline"] == "Yes":
+            flag_cell.fill = MISSED_FILL
+
+    # Summary row
+    total_row = len(overview_rows) + 3
+    ws.cell(row=total_row, column=1, value="TOTAL").font = Font(bold=True)
+    ws.cell(row=total_row, column=4, value=sum(
+        r["total_students"] or 0 for r in overview_rows
+    )).font = Font(bold=True)
+    ws.cell(row=total_row, column=5, value=sum(
+        r["sessions_needed"] or 0 for r in overview_rows
+    )).font = Font(bold=True)
+    ws.cell(row=total_row, column=6, value=sum(
+        r["sessions_planned"] for r in overview_rows
+    )).font = Font(bold=True)
+    ws.cell(row=total_row, column=7, value=sum(
+        r["sessions_missed"] for r in overview_rows
+    )).font = Font(bold=True)
+
+    # Auto-size columns
+    col_widths = [14, 40, 16, 14, 16, 16, 16, 22]
+    for i, w in enumerate(col_widths, start=1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    wb.save(output_path)
+
+
+def _write_utilization_metrics_sheet(
+    output_path: str,
+    trainers: list[dict],
+    sessions: list[dict],
+    priority_trainer_names: set[str],
+) -> None:
+    """Append a 'Utilization Metrics' sheet with:
+    - Trainer utilization: teaching days vs total available days per quarter (%)
+    - Lab/Room utilization: booked days vs total available days (%)
+    """
+    HEADER_FILL = PatternFill(start_color="FF1F4E78", end_color="FF1F4E78", fill_type="solid")
+    HEADER_FONT = Font(bold=True, color="FFFFFFFF")
+    SECTION_FONT = Font(bold=True, size=11)
+    ALIGN_CENTER = Alignment(horizontal="center", vertical="center")
+    PCT_FORMAT = "0.0%"
+
+    # --- Date range ---
+    plan_start, plan_end = _get_planning_period_from_json()
+    if not plan_start or not plan_end:
+        plan_start, plan_end = PLANNING_START, PLANNING_END
+
+    # Count total working days (Mon-Fri) in the planning period
+    all_working_days: list[date] = []
+    cur = plan_start
+    while cur <= plan_end:
+        if cur.weekday() < 5:
+            all_working_days.append(cur)
+        cur += timedelta(days=1)
+    total_working_days = len(all_working_days)
+
+    # --- Trainer Utilization ---
+    leave_lookup = _build_leave_lookup(trainers)
+    location_lookup = _load_trainer_locations()
+
+    # Deduplicated trainer list
+    trainer_names: list[str] = []
+    seen: set[str] = set()
+    for trainer in trainers:
+        name = str(trainer["trainer"]).strip()
+        aliases = _trainer_name_aliases(name)
+        if not (aliases & seen):
+            seen.update(aliases)
+            trainer_names.append(name)
+    for name in sorted(priority_trainer_names):
+        aliases = _trainer_name_aliases(name)
+        if not (aliases & seen):
+            seen.update(aliases)
+            trainer_names.append(name)
+    for s in sessions:
+        name = str(s.get("trainer_name", "")).strip()
+        if name:
+            aliases = _trainer_name_aliases(name)
+            if not (aliases & seen):
+                seen.update(aliases)
+                trainer_names.append(name)
+
+    # Build teaching days per trainer
+    trainer_teaching_days: dict[str, set] = {}
+    for s in sessions:
+        norm = _normalize_trainer_name(s.get("trainer_name", ""))
+        sd = pd.to_datetime(s.get("start_date"), errors="coerce")
+        ed = pd.to_datetime(s.get("end_date"), errors="coerce")
+        if pd.isna(sd) or pd.isna(ed):
+            continue
+        days_set = trainer_teaching_days.setdefault(norm, set())
+        cur_d = sd.date()
+        while cur_d <= ed.date():
+            if cur_d.weekday() < 5:
+                days_set.add(cur_d)
+            cur_d += timedelta(days=1)
+
+    trainer_metrics = []
+    for name in trainer_names:
+        # Leave days
+        leave_set: set[date] = set()
+        for alias in _trainer_name_aliases(name):
+            record = leave_lookup.get(alias)
+            if record:
+                for raw in record.get("leave_dates", []):
+                    parsed = pd.to_datetime(raw, errors="coerce")
+                    if not pd.isna(parsed) and parsed.date().weekday() < 5:
+                        leave_set.add(parsed.date())
+
+        available_days = total_working_days - len(leave_set)
+
+        # Teaching days
+        teaching_days = 0
+        for alias in _trainer_name_aliases(name):
+            teaching_days += len(trainer_teaching_days.get(alias, set()))
+
+        pct = teaching_days / available_days if available_days > 0 else 0
+
+        # Location
+        loc = "Others"
+        for alias in _trainer_name_aliases(name):
+            if alias in location_lookup:
+                loc = location_lookup[alias]["location"]
+                break
+
+        trainer_metrics.append({
+            "trainer": name,
+            "location": loc,
+            "total_working_days": total_working_days,
+            "leave_days": len(leave_set),
+            "available_days": available_days,
+            "teaching_days": teaching_days,
+            "utilization_pct": pct,
+        })
+
+    # --- Lab/Room Utilization ---
+    schedule_path = os.path.join(INPUT_DIR, COURSE_SCHEDULE_FILE)
+    classroom_lookup: dict[str, str] = {}
+    try:
+        schedule_df = pd.read_excel(schedule_path)
+        for _, row in schedule_df.iterrows():
+            code = str(row.get("Course Code", "")).strip()
+            raw = str(row.get("Preferred Classroom", "")).strip()
+            if code and raw and raw.lower() != "nan" and code not in classroom_lookup:
+                classroom_lookup[code] = raw
+    except Exception:
+        pass
+
+    lab_booked_days: dict[str, set] = {}
+    for s in sessions:
+        course_code = str(s.get("course_code", "")).strip()
+        sd = pd.to_datetime(s.get("start_date"), errors="coerce")
+        ed = pd.to_datetime(s.get("end_date"), errors="coerce")
+        if pd.isna(sd) or pd.isna(ed):
+            continue
+
+        classroom_raw = classroom_lookup.get(course_code, "")
+        if not classroom_raw or classroom_raw.lower() == "nan":
+            classroom_raw = course_code
+
+        for lab, lab_start, lab_end in _parse_classrooms(classroom_raw, sd.date(), ed.date()):
+            days_set = lab_booked_days.setdefault(lab, set())
+            cur_d = lab_start
+            while cur_d <= lab_end:
+                if cur_d.weekday() < 5:
+                    days_set.add(cur_d)
+                cur_d += timedelta(days=1)
+
+    lab_metrics = []
+    for lab in sorted(lab_booked_days.keys()):
+        booked = len(lab_booked_days[lab])
+        pct = booked / total_working_days if total_working_days > 0 else 0
+        lab_metrics.append({
+            "lab": lab,
+            "total_available_days": total_working_days,
+            "booked_days": booked,
+            "utilization_pct": pct,
+        })
+
+    # --- Write to Excel ---
+    wb = load_workbook(output_path)
+    if "Utilization Metrics" in wb.sheetnames:
+        del wb["Utilization Metrics"]
+    ws = wb.create_sheet("Utilization Metrics")
+
+    # Section 1: Trainer Utilization
+    row = 1
+    ws.cell(row=row, column=1, value="Trainer Utilization (Teaching vs Available Days)").font = SECTION_FONT
+    row += 1
+
+    trainer_headers = [
+        "Trainer", "Location", "Total Working Days", "Leave Days",
+        "Available Days", "Teaching Days", "Utilization %",
+    ]
+    for col_idx, header in enumerate(trainer_headers, start=1):
+        cell = ws.cell(row=row, column=col_idx, value=header)
+        cell.fill = HEADER_FILL
+        cell.font = HEADER_FONT
+        cell.alignment = ALIGN_CENTER
+    row += 1
+
+    for tm in trainer_metrics:
+        ws.cell(row=row, column=1, value=tm["trainer"])
+        ws.cell(row=row, column=2, value=tm["location"]).alignment = ALIGN_CENTER
+        ws.cell(row=row, column=3, value=tm["total_working_days"]).alignment = ALIGN_CENTER
+        ws.cell(row=row, column=4, value=tm["leave_days"]).alignment = ALIGN_CENTER
+        ws.cell(row=row, column=5, value=tm["available_days"]).alignment = ALIGN_CENTER
+        ws.cell(row=row, column=6, value=tm["teaching_days"]).alignment = ALIGN_CENTER
+        pct_cell = ws.cell(row=row, column=7, value=tm["utilization_pct"])
+        pct_cell.number_format = PCT_FORMAT
+        pct_cell.alignment = ALIGN_CENTER
+        row += 1
+
+    # Section 2: Lab/Room Utilization
+    row += 2
+    ws.cell(row=row, column=1, value="Lab / Room Utilization (Booked vs Available Days)").font = SECTION_FONT
+    row += 1
+
+    lab_headers = ["Lab / Room", "Total Available Days", "Booked Days", "Utilization %"]
+    for col_idx, header in enumerate(lab_headers, start=1):
+        cell = ws.cell(row=row, column=col_idx, value=header)
+        cell.fill = HEADER_FILL
+        cell.font = HEADER_FONT
+        cell.alignment = ALIGN_CENTER
+    row += 1
+
+    for lm in lab_metrics:
+        ws.cell(row=row, column=1, value=lm["lab"])
+        ws.cell(row=row, column=2, value=lm["total_available_days"]).alignment = ALIGN_CENTER
+        ws.cell(row=row, column=3, value=lm["booked_days"]).alignment = ALIGN_CENTER
+        pct_cell = ws.cell(row=row, column=4, value=lm["utilization_pct"])
+        pct_cell.number_format = PCT_FORMAT
+        pct_cell.alignment = ALIGN_CENTER
+        row += 1
+
+    # Column widths
+    col_widths = [28, 12, 20, 12, 16, 16, 16]
+    for i, w in enumerate(col_widths, start=1):
+        ws.column_dimensions[get_column_letter(i)].width = w
+
+    wb.save(output_path)
+
+
 def plan_courses(session_data: dict) -> dict:
     """Main planning function:
     1. Use pre-computed session requirements
@@ -880,6 +1198,33 @@ def plan_courses(session_data: dict) -> dict:
             print("[PLANNER] Lab availability sheet written")
         except Exception as lab_error:
             print(f"[PLANNER] WARNING: Could not write lab availability sheet: {lab_error}")
+            print(traceback.format_exc())
+
+        # Step 7: Append course overview sheet
+        try:
+            print("[PLANNER] Step 7: Writing course overview sheet...")
+            _write_course_overview_sheet(
+                output_path=output_path,
+                courses=courses,
+                sessions=rows,
+            )
+            print("[PLANNER] Course overview sheet written")
+        except Exception as overview_error:
+            print(f"[PLANNER] WARNING: Could not write course overview sheet: {overview_error}")
+            print(traceback.format_exc())
+
+        # Step 8: Append utilization metrics sheet
+        try:
+            print("[PLANNER] Step 8: Writing utilization metrics sheet...")
+            _write_utilization_metrics_sheet(
+                output_path=output_path,
+                trainers=trainers,
+                sessions=rows,
+                priority_trainer_names=_priority_trainer_names(priority_df),
+            )
+            print("[PLANNER] Utilization metrics sheet written")
+        except Exception as util_error:
+            print(f"[PLANNER] WARNING: Could not write utilization metrics sheet: {util_error}")
             print(traceback.format_exc())
 
         return {
