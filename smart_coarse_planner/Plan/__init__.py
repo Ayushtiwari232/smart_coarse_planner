@@ -68,8 +68,6 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             status_code=200,
         )
 
-
-
     except Exception as ex:
         return func.HttpResponse(
             body=json.dumps({
