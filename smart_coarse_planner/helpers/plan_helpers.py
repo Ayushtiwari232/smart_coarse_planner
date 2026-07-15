@@ -342,7 +342,8 @@ def get_plan_status(job_id: str) -> dict:
     return response
 
 
-def get_plan_file_response(job_id: str) -> dict | FileResponse:
+
+def get_plan_file_response(job_id: str) -> dict:
     job = _jobs.get(job_id)
 
     if not job:
@@ -379,11 +380,11 @@ def get_plan_file_response(job_id: str) -> dict | FileResponse:
             "job_id": job_id,
         }
 
-    return FileResponse(
-        path=file_path,
-        filename=file_name,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
+    return {
+        "status": "success",
+        "file_path": str(file_path),
+        "file_name": file_name,
+    }
 
 
 def run_local(input_file: Optional[str] = None, user_input: Optional[str] = None) -> dict:

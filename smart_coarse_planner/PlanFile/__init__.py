@@ -22,7 +22,26 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=400
             )
 
-        return get_plan_file_response(job_id)
+        result = get_plan_file_response(job_id)
+
+        if result.get("status") != "success":
+            return func.HttpResponse(
+                body=json.dumps(result),
+                mimetype="application/json",
+                status_code=404
+            )
+
+        with open(result["file_path"], "rb") as file:
+            file_bytes = file.read()
+
+        return func.HttpResponse(
+            body=file_bytes,
+            status_code=200,
+            headers={
+                "Content-Disposition": f'attachment; filename="{result["file_name"]}"',
+                "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            }
+        )
 
     except Exception as ex:
         logging.exception("Error retrieving plan file")
