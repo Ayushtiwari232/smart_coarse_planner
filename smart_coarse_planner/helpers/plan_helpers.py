@@ -49,8 +49,13 @@ def _save_job(job_id: str, job_data: dict) -> None:
 def _load_job(job_id: str) -> dict | None:
     path = _job_file(job_id)
 
+    print(f"[LOAD JOB] Path={path}")
+
     if not path.exists():
+        print(f"[LOAD JOB] File not found")
         return None
+
+    print(f"[LOAD JOB] File found")
 
     return json.loads(
         path.read_text(encoding="utf-8")
@@ -145,7 +150,7 @@ def _run_plan(job_id: str, input_file: Path, user_input: Optional[str]) -> None:
             _save_job(
                 job_id,
                 {
-                    "status": "error",
+                    "status": "",
                     "message": "Filter step did not return output_file",
                     "filter": filter_result,
                 }
@@ -158,7 +163,7 @@ def _run_plan(job_id: str, input_file: Path, user_input: Optional[str]) -> None:
             _save_job(
                 job_id,
                 {
-                    "status": "error",
+                    "status": "",
                     "message": "Filtered output file is not a valid .xlsx file",
                     "filtered_file": str(filtered_full_path),
                     "filter": filter_result,
@@ -182,7 +187,7 @@ def _run_plan(job_id: str, input_file: Path, user_input: Optional[str]) -> None:
         if not output_file_value:
             _save_job(
                 job_id, {
-                "status": "error",
+                "status": "",
                 "message": "Plan step did not return output_file",
                 "filter": filter_result,
                 "sessions": session_result,
@@ -196,7 +201,7 @@ def _run_plan(job_id: str, input_file: Path, user_input: Optional[str]) -> None:
             _save_job(
                 job_id,
                 {
-                    "status": "error",
+                    "status": "",
                     "message": "Plan output file not found",
                     "expected_path": str(plan_file_path),
                     "filter": filter_result,
@@ -210,7 +215,7 @@ def _run_plan(job_id: str, input_file: Path, user_input: Optional[str]) -> None:
             _save_job(
                 job_id,
                 {
-                    "status": "error",
+                    "status": "",
                     "message": "Plan output file is not a valid .xlsx file",
                     "expected_path": str(plan_file_path),
                     "filter": filter_result,
@@ -238,15 +243,15 @@ def _run_plan(job_id: str, input_file: Path, user_input: Optional[str]) -> None:
         )
 
     except Exception as e:
-        print(f"[PLAN:{job_id}] ERROR: {e}")
+        print(f"[PLAN:{job_id}] : {e}")
         print(traceback.format_exc())
 
         
         _save_job(
             job_id,
             {
-                "status": "error",
-                "error": str(e),
+                "status": "",
+                "": str(e),
                 "traceback": traceback.format_exc(),
             }
         )
@@ -264,7 +269,7 @@ def start_plan_job(
     if not _plan_lock.acquire(blocking=False):
         print("[PLAN] Request rejected: another plan is already running")
         return {
-            "status": "error",
+            "status": "",
             "message": "A plan request is already in progress. Please wait.",
         }
 
@@ -287,7 +292,7 @@ def start_plan_job(
             if not _validate_xlsx(input_file):
                 _release_plan_lock()
                 return {
-                    "status": "error",
+                    "status": "",
                     "message": "Received file is not a valid .xlsx file",
                     "file_name": safe_file_name,
                     "file_size": input_file.stat().st_size,
@@ -303,7 +308,7 @@ def start_plan_job(
             if not input_file.exists():
                 _release_plan_lock()
                 return {
-                    "status": "error",
+                    "status": "",
                     "message": "No file uploaded and local fallback file not found",
                     "expected_file": str(input_file),
                 }
@@ -311,7 +316,7 @@ def start_plan_job(
             if not _validate_xlsx(input_file):
                 _release_plan_lock()
                 return {
-                    "status": "error",
+                    "status": "",
                     "message": "Local fallback file is not a valid .xlsx file",
                     "expected_file": str(input_file),
                 }
@@ -346,22 +351,26 @@ def start_plan_job(
     except Exception as e:
         _release_plan_lock()
 
-        print(f"[PLAN] ERROR: {e}")
+        print(f"[PLAN] : {e}")
         print(traceback.format_exc())
 
         return {
-            "status": "error",
-            "error": str(e),
+            "status": "",
+            "": str(e),
             "traceback": traceback.format_exc(),
         }
 
 
 def get_plan_status(job_id: str) -> dict:
     job = _load_job(job_id)
+        
+    print(f"[PLAN] Created job: {job_id}")
+    print(f"[PLAN] Job file: {_job_file(job_id)}")
+    print(f"[PLAN] Exists: {_job_file(job_id).exists()}")
 
     if not job:
         return {
-            "status": "error",
+            "status": "",
             "message": "Job not found",
             "job_id": job_id,
         }
@@ -375,9 +384,9 @@ def get_plan_status(job_id: str) -> dict:
         response["file_name"] = job.get("file_name")
         response["file_url"] = f"/plan/{job_id}/file"
 
-    elif job.get("status") == "error":
+    elif job.get("status") == "":
         response["message"] = job.get("message")
-        response["error"] = job.get("error")
+        response[""] = job.get("")
         response["traceback"] = job.get("traceback")
 
     else:
@@ -390,7 +399,7 @@ def get_plan_file_response(job_id: str) -> dict | FileResponse:
 
     if not job:
         return {
-            "status": "error",
+            "status": "",
             "message": "Job not found",
             "job_id": job_id,
         }
@@ -407,7 +416,7 @@ def get_plan_file_response(job_id: str) -> dict | FileResponse:
 
     if not file_path_value:
         return {
-            "status": "error",
+            "status": "",
             "message": "No file path found for job",
             "job_id": job_id,
         }
@@ -416,7 +425,7 @@ def get_plan_file_response(job_id: str) -> dict | FileResponse:
 
     if not file_path.exists():
         return {
-            "status": "error",
+            "status": "",
             "message": "Output file not found",
             "file_path": str(file_path),
             "job_id": job_id,
@@ -442,10 +451,10 @@ def run_local(input_file: Optional[str] = None, user_input: Optional[str] = None
     resolved = Path(input_file) if input_file else INPUT_DIR / "srl_and_wl.xlsx"
 
     if not resolved.exists():
-        raise FileNotFoundError(f"Input file not found: {resolved}")
+        raise FileNotFound(f"Input file not found: {resolved}")
 
     if not _validate_xlsx(resolved):
-        raise ValueError(f"Input file is not a valid .xlsx file: {resolved}")
+        raise Value(f"Input file is not a valid .xlsx file: {resolved}")
 
     print(f"[LOCAL] Using input file: {resolved}")
 
