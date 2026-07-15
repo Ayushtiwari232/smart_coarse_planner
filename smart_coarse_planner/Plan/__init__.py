@@ -21,18 +21,20 @@ import azure.functions as func
 import logging
 import json
 import base64
+import traceback
 from pathlib import Path
 
-from .helpers import start_plan_job
+from helpers import start_plan_job
 
+
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 DEFAULT_INPUT_FILE = (
-    Path(__file__).resolve().parent
+    BASE_DIR
     / "data"
     / "input"
     / "srl_and_wl.xlsx"
 )
-
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info("Plan endpoint called.")
@@ -85,14 +87,15 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             status_code=200,
         )
 
-    except Exception as ex:
-        logging.exception("Error processing plan request")
 
+
+    except Exception as ex:
         return func.HttpResponse(
             body=json.dumps({
                 "status": "error",
                 "message": str(ex),
+                "traceback": traceback.format_exc()
             }),
             mimetype="application/json",
-            status_code=500,
+            status_code=500
         )
