@@ -9,8 +9,6 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 
-from fastapi.responses import FileResponse
-
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -29,9 +27,6 @@ OUTPUT_DIR = Path(
 UPLOAD_INPUT_DIR.mkdir(parents=True, exist_ok=True)
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# Global in-memory job store.
-# Good for local/dev tunnel POC.
-# For production Azure, replace this with Blob/Table Storage or SharePoint-backed status.
 _jobs: Dict[str, Dict[str, Any]] = {}
 
 # Single-job lock to avoid multiple plans running at the same time.
@@ -342,48 +337,41 @@ def get_plan_status(job_id: str) -> dict:
     return response
 
 
-def get_plan_file_response(job_id: str) -> dict | FileResponse:
-    job = _jobs.get(job_id)
-
-    if not job:
-        return {
-            "status": "error",
-            "message": "Job not found",
-            "job_id": job_id,
-        }
-
-    if job.get("status") != "success":
-        return {
-            "status": job.get("status"),
-            "message": "File is not ready",
-            "job_id": job_id,
-        }
-
-    file_path_value = job.get("file_path")
-    file_name = job.get("file_name") or "processed_course_plan.xlsx"
-
-    if not file_path_value:
-        return {
-            "status": "error",
-            "message": "No file path found for job",
-            "job_id": job_id,
-        }
-
-    file_path = Path(file_path_value)
-
-    if not file_path.exists():
-        return {
-            "status": "error",
-            "message": "Output file not found",
-            "file_path": str(file_path),
-            "job_id": job_id,
-        }
-
-    return FileResponse(
-        path=file_path,
-        filename=file_name,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
+def get_plan_file_response(job_id: str) -> dict:
+   job = _jobs.get(job_id)
+   if not job:
+       return {
+           "status": "error",
+           "message": "Job not found",
+           "job_id": job_id,
+       }
+   if job.get("status") != "success":
+       return {
+           "status": job.get("status"),
+           "message": "File is not ready",
+           "job_id": job_id,
+       }
+   file_path_value = job.get("file_path")
+   file_name = job.get("file_name") or "processed_course_plan.xlsx"
+   if not file_path_value:
+       return {
+           "status": "error",
+           "message": "No file path found for job",
+           "job_id": job_id,
+       }
+   file_path = Path(file_path_value)
+   if not file_path.exists():
+       return {
+           "status": "error",
+           "message": "Output file not found",
+           "file_path": str(file_path),
+           "job_id": job_id,
+       }
+   return {
+       "status": "success",
+       "file_path": str(file_path),
+       "file_name": file_name,
+   }
 
 
 def run_local(input_file: Optional[str] = None, user_input: Optional[str] = None) -> dict:
