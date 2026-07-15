@@ -21,20 +21,40 @@ INPUT_DIR = BASE_DIR / "data" / "input"
 # SMART_PLANNER_OUTPUT_DIR (e.g. point to a temp path) when deploying.
 _TMP_BASE = Path(tempfile.gettempdir()) / "smart_planner"
 UPLOAD_INPUT_DIR = _TMP_BASE / "input"   # uploaded user files
-# OUTPUT_DIR = Path(
-#     os.environ.get("SMART_PLANNER_OUTPUT_DIR")
-#     or (BASE_DIR / "data" / "output")
-# )
-
-OUTPUT_DIR = _TMP_BASE / "output"
-
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_DIR = Path(
+    os.environ.get("SMART_PLANNER_OUTPUT_DIR")
+    or (BASE_DIR / "data" / "output")
+)
 
 # Global in-memory job store.
 # Good for local/dev tunnel POC.
 # For production Azure, replace this with Blob/Table Storage or SharePoint-backed status.
-_jobs: Dict[str, Dict[str, Any]] = {}
+import json
 
+JOBS_DIR = _TMP_BASE / "jobs"
+JOBS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _job_file(job_id: str) -> Path:
+    return JOBS_DIR / f"{job_id}.json"
+
+
+def _save_job(job_id: str, job_data: dict) -> None:
+    _job_file(job_id).write_text(
+        json.dumps(job_data, default=str),
+        encoding="utf-8"
+    )
+
+
+def _load_job(job_id: str) -> dict | None:
+    path = _job_file(job_id)
+
+    if not path.exists():
+        return None
+
+    return json.loads(
+        path.read_text(encoding="utf-8")
+    )
 # Single-job lock to avoid multiple plans running at the same time.
 _plan_lock = threading.Lock()
 
@@ -122,22 +142,28 @@ def _run_plan(job_id: str, input_file: Path, user_input: Optional[str]) -> None:
 
         filtered_file_value = filter_result.get("output_file")
         if not filtered_file_value:
-            _jobs[job_id] = {
-                "status": "error",
-                "message": "Filter step did not return output_file",
-                "filter": filter_result,
-            }
+            _save_job(
+                job_id,
+                {
+                    "status": "error",
+                    "message": "Filter step did not return output_file",
+                    "filter": filter_result,
+                }
+            )
             return
 
         filtered_full_path = _safe_join_output(filtered_file_value)
 
         if not _validate_xlsx(filtered_full_path):
-            _jobs[job_id] = {
-                "status": "error",
-                "message": "Filtered output file is not a valid .xlsx file",
-                "filtered_file": str(filtered_full_path),
-                "filter": filter_result,
-            }
+            _save_job(
+                job_id,
+                {
+                    "status": "error",
+                    "message": "Filtered output file is not a valid .xlsx file",
+                    "filtered_file": str(filtered_full_path),
+                    "filter": filter_result,
+                }
+            )
             return
 
         print(f"[PLAN:{job_id}] Step 2: Calculating sessions for {filtered_full_path}")
@@ -154,37 +180,44 @@ def _run_plan(job_id: str, input_file: Path, user_input: Optional[str]) -> None:
 
         output_file_value = plan_result.get("output_file")
         if not output_file_value:
-            _jobs[job_id] = {
+            _save_job(
+                job_id, {
                 "status": "error",
                 "message": "Plan step did not return output_file",
                 "filter": filter_result,
                 "sessions": session_result,
                 "plan": plan_result,
-            }
+            })
             return
 
         plan_file_path = _safe_join_output(output_file_value)
 
         if not plan_file_path.exists():
-            _jobs[job_id] = {
-                "status": "error",
-                "message": "Plan output file not found",
-                "expected_path": str(plan_file_path),
-                "filter": filter_result,
-                "sessions": session_result,
-                "plan": plan_result,
-            }
+            _save_job(
+                job_id,
+                {
+                    "status": "error",
+                    "message": "Plan output file not found",
+                    "expected_path": str(plan_file_path),
+                    "filter": filter_result,
+                    "sessions": session_result,
+                    "plan": plan_result,
+                }
+            )
             return
 
         if not _validate_xlsx(plan_file_path):
-            _jobs[job_id] = {
-                "status": "error",
-                "message": "Plan output file is not a valid .xlsx file",
-                "expected_path": str(plan_file_path),
-                "filter": filter_result,
-                "sessions": session_result,
-                "plan": plan_result,
-            }
+            _save_job(
+                job_id,
+                {
+                    "status": "error",
+                    "message": "Plan output file is not a valid .xlsx file",
+                    "expected_path": str(plan_file_path),
+                    "filter": filter_result,
+                    "sessions": session_result,
+                    "plan": plan_result,
+                }
+            )
             return
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -192,24 +225,31 @@ def _run_plan(job_id: str, input_file: Path, user_input: Optional[str]) -> None:
 
         print(f"[PLAN:{job_id}] Completed successfully. Output: {plan_file_path}")
 
-        _jobs[job_id] = {
-            "status": "success",
-            "file_name": sharepoint_file_name,
-            "file_path": str(plan_file_path),
-            "filter": filter_result,
-            "sessions": session_result,
-            "plan": plan_result,
-        }
+        _save_job(
+            job_id,
+            {
+                "status": "success",
+                "file_name": sharepoint_file_name,
+                "file_path": str(plan_file_path),
+                "filter": filter_result,
+                "sessions": session_result,
+                "plan": plan_result,
+            }
+        )
 
     except Exception as e:
         print(f"[PLAN:{job_id}] ERROR: {e}")
         print(traceback.format_exc())
 
-        _jobs[job_id] = {
-            "status": "error",
-            "error": str(e),
-            "traceback": traceback.format_exc(),
-        }
+        
+        _save_job(
+        job_id,
+    {
+                "status": "error",
+                "error": str(e),
+                "traceback": traceback.format_exc(),
+            }
+        )
 
     finally:
         _release_plan_lock()
@@ -278,11 +318,14 @@ def start_plan_job(
 
         job_id = uuid.uuid4().hex[:12]
 
-        _jobs[job_id] = {
-            "status": "processing",
-            "file_name": Path(input_file).name,
-            "started_at": datetime.now().isoformat(timespec="seconds"),
-        }
+        _save_job(
+            job_id,
+            {
+                "status": "processing",
+                "file_name": Path(input_file).name,
+                "started_at": datetime.now().isoformat(timespec="seconds"),
+            }
+        )
 
         thread = threading.Thread(
             target=_run_plan,
@@ -314,7 +357,7 @@ def start_plan_job(
 
 
 def get_plan_status(job_id: str) -> dict:
-    job = _jobs.get(job_id)
+    job = _load_job(job_id)
 
     if not job:
         return {
@@ -342,9 +385,8 @@ def get_plan_status(job_id: str) -> dict:
 
     return response
 
-
 def get_plan_file_response(job_id: str) -> dict | FileResponse:
-    job = _jobs.get(job_id)
+    job = _load_job(job_id)
 
     if not job:
         return {
