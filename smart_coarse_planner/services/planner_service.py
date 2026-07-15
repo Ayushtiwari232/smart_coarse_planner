@@ -26,10 +26,23 @@ def _count_tokens(text: str, model: str = "gpt-4o") -> int:
     return len(enc.encode(text))
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "input")
-_DEFAULT_OUTPUT_DIR = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "data", "output")
+# _DEFAULT_OUTPUT_DIR = os.path.abspath(
+#     os.path.join(os.path.dirname(__file__), "..", "data", "output")
+# )
+# OUTPUT_DIR = os.environ.get("SMART_PLANNER_OUTPUT_DIR") or _DEFAULT_OUTPUT_DIR
+
+_DEFAULT_OUTPUT_DIR = os.path.join(
+    tempfile.gettempdir(),
+    "smart_planner",
+    "output"
 )
-OUTPUT_DIR = os.environ.get("SMART_PLANNER_OUTPUT_DIR") or _DEFAULT_OUTPUT_DIR
+
+OUTPUT_DIR = (
+    os.environ.get("SMART_PLANNER_OUTPUT_DIR")
+    or _DEFAULT_OUTPUT_DIR
+)
+
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 TRAINER_LEAVE_FILE = "trainer_leave_dates_2026.xlsx"
 PRIORITY_FILE = "priority_to_train_list.xlsx"

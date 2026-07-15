@@ -6,10 +6,21 @@ import traceback
 import pandas as pd
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "input")
-_DEFAULT_OUTPUT_DIR = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "data", "output")
+# _DEFAULT_OUTPUT_DIR = os.path.abspath(
+#     os.path.join(os.path.dirname(__file__), "..", "data", "output")
+# )
+# OUTPUT_DIR = os.environ.get("SMART_PLANNER_OUTPUT_DIR") or _DEFAULT_OUTPUT_DIR
+
+
+_DEFAULT_OUTPUT_DIR = "/tmp/smart_course_planner/output"
+
+OUTPUT_DIR = (
+    os.environ.get("SMART_PLANNER_OUTPUT_DIR")
+    or _DEFAULT_OUTPUT_DIR
 )
-OUTPUT_DIR = os.environ.get("SMART_PLANNER_OUTPUT_DIR") or _DEFAULT_OUTPUT_DIR
+
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+
 
 FILTERED_FILE = "filtered_output_v1.xlsx"
 COURSE_SCHEDULE_FILE = "course_schedule_days.xlsx"

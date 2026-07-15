@@ -21,10 +21,14 @@ INPUT_DIR = BASE_DIR / "data" / "input"
 # SMART_PLANNER_OUTPUT_DIR (e.g. point to a temp path) when deploying.
 _TMP_BASE = Path(tempfile.gettempdir()) / "smart_planner"
 UPLOAD_INPUT_DIR = _TMP_BASE / "input"   # uploaded user files
-OUTPUT_DIR = Path(
-    os.environ.get("SMART_PLANNER_OUTPUT_DIR")
-    or (BASE_DIR / "data" / "output")
-)
+# OUTPUT_DIR = Path(
+#     os.environ.get("SMART_PLANNER_OUTPUT_DIR")
+#     or (BASE_DIR / "data" / "output")
+# )
+
+OUTPUT_DIR = _TMP_BASE / "output"
+
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Global in-memory job store.
 # Good for local/dev tunnel POC.
