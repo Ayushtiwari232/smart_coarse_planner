@@ -35,31 +35,51 @@ JOBS_DIR = _TMP_BASE / "jobs"
 JOBS_DIR.mkdir(parents=True, exist_ok=True)
 
 
+import json
+import logging
+import threading
+from pathlib import Path
+
+JOBS_DIR = _TMP_BASE / "jobs"
+JOBS_DIR.mkdir(parents=True, exist_ok=True)
+
+
 def _job_file(job_id: str) -> Path:
     return JOBS_DIR / f"{job_id}.json"
 
 
 def _save_job(job_id: str, job_data: dict) -> None:
-    _job_file(job_id).write_text(
+    path = _job_file(job_id)
+
+    logging.info(f"[SAVE JOB] Job ID={job_id}")
+    logging.info(f"[SAVE JOB] Path={path}")
+
+    path.write_text(
         json.dumps(job_data, default=str),
         encoding="utf-8"
     )
+
+    logging.info(f"[SAVE JOB] File exists={path.exists()}")
 
 
 def _load_job(job_id: str) -> dict | None:
     path = _job_file(job_id)
 
-    print(f"[LOAD JOB] Path={path}")
+    logging.info(f"[LOAD JOB] Job ID={job_id}")
+    logging.info(f"[LOAD JOB] Path={path}")
+    logging.info(f"[LOAD JOB] Exists={path.exists()}")
 
     if not path.exists():
-        print(f"[LOAD JOB] File not found")
+        logging.warning(f"[LOAD JOB] File not found for {job_id}")
         return None
 
-    print(f"[LOAD JOB] File found")
+    logging.info(f"[LOAD JOB] File found for {job_id}")
 
     return json.loads(
         path.read_text(encoding="utf-8")
     )
+
+
 # Single-job lock to avoid multiple plans running at the same time.
 _plan_lock = threading.Lock()
 
@@ -332,12 +352,7 @@ def start_plan_job(
             }
         )
         print(f"[PLAN] Saved job record: {_job_file(job_id)}")
-        thread = threading.Thread(
-            target=_run_plan,
-            args=(job_id, input_file, user_input),
-            daemon=True,
-        )
-        thread.start()
+        _run_plan(job_id, input_file, user_input)
 
         print(f"[PLAN] Job accepted: {job_id}")
 
