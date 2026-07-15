@@ -8,10 +8,6 @@ import uuid
 import zipfile
 from datetime import datetime
 from pathlib import Path
-import azure.functions as func
-import azure.functions as func
-import json
-import logging
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 # Static reference data bundled with the app (read-only is fine)
@@ -410,7 +406,7 @@ def get_plan_status(job_id: str) -> dict:
 
     return response
 
-def get_plan_file_response(job_id: str) -> dict | func.HttpRespons:
+def get_plan_file_response(job_id: str) -> dict | FileResponse:
     job = _load_job(job_id)
 
     if not job:
@@ -447,14 +443,10 @@ def get_plan_file_response(job_id: str) -> dict | func.HttpRespons:
             "job_id": job_id,
         }
 
-
-    return func.HttpResponse(
-        body=file_path.read_bytes(),
-        status_code=200,
-        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={
-            "Content-Disposition": f'attachment; filename="{file_name}"'
-        }
+    return FileResponse(
+        path=file_path,
+        filename=file_name,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
 
