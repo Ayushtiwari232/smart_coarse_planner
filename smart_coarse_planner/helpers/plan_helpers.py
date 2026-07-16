@@ -8,7 +8,7 @@ import uuid
 import zipfile
 from datetime import datetime
 from pathlib import Path
-
+import logging
 from fastapi.responses import FileResponse
 
 
