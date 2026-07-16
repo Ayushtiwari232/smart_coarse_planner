@@ -343,49 +343,107 @@ def get_plan_status(job_id: str) -> dict:
 
 
 
-def get_plan_file_response(job_id: str) -> dict:
-    job = _jobs.get(job_id)
+# def get_plan_file_response(job_id: str) -> dict:
+#     job = _jobs.get(job_id)
 
-    if not job:
+#     if not job:
+#         return {
+#             "status": "error",
+#             "message": "Job not found",
+#             "job_id": job_id,
+#         }
+
+#     if job.get("status") != "success":
+#         return {
+#             "status": job.get("status"),
+#             "message": "File is not ready",
+#             "job_id": job_id,
+#         }
+
+#     file_path_value = job.get("file_path")
+#     file_name = job.get("file_name") or "processed_course_plan.xlsx"
+
+#     if not file_path_value:
+#         return {
+#             "status": "error",
+#             "message": "No file path found for job",
+#             "job_id": job_id,
+#         }
+
+#     file_path = Path(file_path_value)
+
+#     if not file_path.exists():
+#         return {
+#             "status": "error",
+#             "message": "Output file not found",
+#             "file_path": str(file_path),
+#             "job_id": job_id,
+#         }
+
+#     return {
+#         "status": "success",
+#         "file_path": str(file_path),
+#         "file_name": file_name,
+#     }
+import logging
+import traceback
+
+
+def get_plan_file_response(job_id: str):
+    try:
+        logging.info(f"get_plan_file_response called for job_id={job_id}")
+        logging.info(f"Available job IDs: {list(_jobs.keys())}")
+        job = _jobs.get(job_id)
+
+        if not job:
+            logging.warning(f"Job not found: {job_id}")
+
+            return {
+                "status": "error",
+                "message": "Job not found",
+                "job_id": job_id
+            }
+
+        logging.info(f"Job status: {job.get('status')}")
+
+        file_path = job.get("file_path")
+        file_name = job.get("file_name")
+
+        logging.info(f"file_path={file_path}")
+        logging.info(f"file_name={file_name}")
+
+        if job.get("status") != "success":
+            return {
+                "status": job.get("status"),
+                "message": "File is not ready",
+                "job_id": job_id
+            }
+
+        if not file_path:
+            return {
+                "status": "error",
+                "message": "No file path found",
+                "job_id": job_id
+            }
+
+        return {
+            "status": "success",
+            "file_path": file_path,
+            "file_name": file_name,
+            "job_id": job_id
+        }
+
+    except Exception as ex:
+        logging.exception(
+            f"Error in get_plan_file_response for job_id={job_id}"
+        )
+
         return {
             "status": "error",
-            "message": "Job not found",
+            "message": str(ex),
             "job_id": job_id,
+            "traceback": traceback.format_exc()
         }
-
-    if job.get("status") != "success":
-        return {
-            "status": job.get("status"),
-            "message": "File is not ready",
-            "job_id": job_id,
-        }
-
-    file_path_value = job.get("file_path")
-    file_name = job.get("file_name") or "processed_course_plan.xlsx"
-
-    if not file_path_value:
-        return {
-            "status": "error",
-            "message": "No file path found for job",
-            "job_id": job_id,
-        }
-
-    file_path = Path(file_path_value)
-
-    if not file_path.exists():
-        return {
-            "status": "error",
-            "message": "Output file not found",
-            "file_path": str(file_path),
-            "job_id": job_id,
-        }
-
-    return {
-        "status": "success",
-        "file_path": str(file_path),
-        "file_name": file_name,
-    }
-
 
 def run_local(input_file: Optional[str] = None, user_input: Optional[str] = None) -> dict:
     """
