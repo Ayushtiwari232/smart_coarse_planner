@@ -28,7 +28,7 @@ def health():
 
 
 @app.post("/plan")
-def plan(req: PlanRequest):
+def plan(req: Optional[PlanRequest] = None):
     """
     Starts a planning job.
 
@@ -44,6 +44,8 @@ def plan(req: PlanRequest):
 
     This endpoint returns quickly with job_id and poll_url.
     """
+    if req is None:
+        req = PlanRequest()
     file_name = req.file_name
     file_content_base64 = req.file_content_base64
 
