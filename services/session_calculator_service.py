@@ -11,11 +11,18 @@ _DEFAULT_OUTPUT_DIR = os.path.abspath(
 )
 OUTPUT_DIR = os.environ.get("SMART_PLANNER_OUTPUT_DIR") or _DEFAULT_OUTPUT_DIR
 
-FILTERED_FILE = "filtered_output_v1.xlsx"
+FILTERED_FILE = "filtered_output_v3.xlsx"
 COURSE_SCHEDULE_FILE = "course_schedule_days.xlsx"
 
 MODALITY_VALUES = ["MODALITY IXR"]
 SITE_CD_VALUES = ["BEST", "PHC", "CL", "SLC", "VC"]
+
+# Corrections for known data-entry errors in course_schedule_days.xlsx.
+# IGT2BL001 (Azurion Essentials) classroom note says "QS003 wk1+2 / QS147 wk3" → 3 weeks = 15 working days,
+# but the spreadsheet mistakenly shows 19.
+DAYS_OVERRIDE: dict[str, int] = {
+    "IGT2BL001": 15,
+}
 
 
 def calculate_sessions(filtered_file: str = None) -> dict:
@@ -63,6 +70,8 @@ def calculate_sessions(filtered_file: str = None) -> dict:
             students = int(row["students_interested"])
             max_capacity = capacity_lookup.get(course_code)
             no_of_days = days_lookup.get(course_code)
+            # Apply known corrections
+            no_of_days = DAYS_OVERRIDE.get(course_code, no_of_days)
 
             if max_capacity and max_capacity > 0:
                 sessions_needed = math.ceil(students / max_capacity)
@@ -84,13 +93,13 @@ def calculate_sessions(filtered_file: str = None) -> dict:
         result_df = pd.DataFrame(results)
 
         os.makedirs(OUTPUT_DIR, exist_ok=True)
-        output_path = os.path.join(OUTPUT_DIR, "session_requirements_v1.xlsx")
+        output_path = os.path.join(OUTPUT_DIR, "session_requirements_v3.xlsx")
         result_df.to_excel(output_path, index=False)
         print(f"[SESSION] Saved {len(results)} courses to {output_path}")
 
         return {
             "courses": results,
-            "output_file": "session_requirements_v1.xlsx",
+            "output_file": "session_requirements_v3.xlsx",
         }
     except Exception as e:
         print(f"[SESSION] ERROR: {e}")

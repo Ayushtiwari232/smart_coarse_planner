@@ -1,7 +1,7 @@
 {
   "source_file": "phc_planning_2026 (1).xlsx",
   "sheet": "Planning2026",
-  "period": "2026-07-01 to 2026-09-30",
+  "period": "2026-09-01 to 2026-12-31",
   "notes": [
     "Dates shown are workbook planning columns for working days only; weekends are not present in the planning grid.",
     "Legend mapping is inferred from the visible row-4 labels and cell fill IDs. Course/session bars without a visible row-4 legend label are grouped as planned_or_booked."
