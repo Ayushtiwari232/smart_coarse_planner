@@ -2,7 +2,7 @@
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 # More info on Python, GitHub Actions, and Azure Functions: https://aka.ms/python-webapps-actions
 
-name: Build and deploy Python project to Azure Function App - smart-coarse-planner
+name: Build and deploy Python project to Azure Function App - smart-course-planner
 
 on:
   push:
@@ -72,9 +72,9 @@ jobs:
         uses: Azure/functions-action@v1
         id: deploy-to-function
         with:
-          app-name: "smart-coarse-planner"
+          app-name: "smart-course-planner"
           slot-name: "Production"
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_F44C1248F7174A13B4A9979AE5C10AA2 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_50B4692A5D6942A2A30F76EFF243326F }}
           sku: "flexconsumption"
           remote-build: true
