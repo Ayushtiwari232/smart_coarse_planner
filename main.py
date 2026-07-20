@@ -10,6 +10,8 @@ from helpers import get_plan_file_response, get_plan_status, run_local, start_pl
 
 app = FastAPI(title="Smart Course Planner")
 
+APP_VERSION = "2026-07-20-v2"
+
 DEFAULT_INPUT_FILE = Path(__file__).resolve().parent / "data" / "input" / "srl_and_wl.xlsx"
 
 
@@ -24,6 +26,7 @@ def health():
     return {
         "status": "ok",
         "message": "FastAPI is running",
+        "version": APP_VERSION,
     }
 
 

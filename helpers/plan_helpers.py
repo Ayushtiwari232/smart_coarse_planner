@@ -325,6 +325,8 @@ def start_plan_job(
             "job_id": job_id,
             "poll_url": f"/plan/{job_id}",
             "file_url": f"/plan/{job_id}/file",
+            "version": "2026-07-20-v2",
+            "jobs_dir": str(_JOBS_DIR),
         }
 
     except Exception as e:
@@ -346,13 +348,16 @@ def get_plan_status(job_id: str) -> dict:
     if not job:
         return {
             "status": "error",
-            "message": "Job not found",
+            "message": f"Job '{job_id}' not found in jobs directory: {_JOBS_DIR}",
             "job_id": job_id,
+            "version": "2026-07-20-v2",
+            "jobs_dir": str(_JOBS_DIR),
         }
 
     response = {
         "status": job.get("status"),
         "job_id": job_id,
+        "version": "2026-07-20-v2",
     }
 
     if job.get("status") == "success":
@@ -376,8 +381,10 @@ def get_plan_file_response(job_id: str) -> dict | FileResponse:
     if not job:
         return {
             "status": "error",
-            "message": "Job not found",
+            "message": f"Job '{job_id}' not found in jobs directory: {_JOBS_DIR}",
             "job_id": job_id,
+            "version": "2026-07-20-v2",
+            "jobs_dir": str(_JOBS_DIR),
         }
 
     if job.get("status") != "success":
