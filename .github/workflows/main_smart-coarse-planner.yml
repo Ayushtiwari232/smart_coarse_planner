@@ -33,8 +33,7 @@ jobs:
 
       - name: Zip artifact for deployment
         run: |
-          zip -r release.zip . \
-            -x "release.zip" \
+          zip -r release.zip * .funcignore \
             -x "venv/*" \
             -x ".venv/*" \
             -x "env/*" \
@@ -44,9 +43,10 @@ jobs:
             -x "data/output/*" \
             -x "dist/*" \
             -x "build/*" \
-            -x "*.egg-info/*" \
-            -x ".git/*" \
-            -x ".github/*"
+            -x "*.egg-info/*"
+
+      - name: Verify zip contents
+        run: zipinfo release.zip | head -20
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
