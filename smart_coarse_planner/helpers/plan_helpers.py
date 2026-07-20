@@ -2499,11 +2499,18 @@ def start_plan_job(
         print(f"[PLAN] Job completed: {job_id}, status={final_job.get('status') if final_job else 'unknown'}")
 
         if final_job and final_job.get("status") == "success":
+            file_path = final_job.get("file_path")
+            file_base64 = None
+            if file_path and Path(file_path).exists():
+                import base64 as _b64
+                file_base64 = _b64.b64encode(Path(file_path).read_bytes()).decode("ascii")
+
             return {
                 "status": "success",
                 "job_id": job_id,
                 "file_url": f"/plan/{job_id}/file",
                 "file_name": final_job.get("file_name"),
+                "file_content_base64": file_base64,
                 "message": "Plan completed successfully",
             }
         else:
