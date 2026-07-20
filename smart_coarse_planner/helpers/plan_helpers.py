@@ -2171,45 +2171,50 @@ logging.info(f"[INIT] OUTPUT_DIR: {OUTPUT_DIR}")
 logging.info(f"[INIT] UPLOAD_INPUT_DIR: {UPLOAD_INPUT_DIR}")
 logging.info(f"[INIT] SMART_PLANNER_OUTPUT_DIR env: {os.environ.get('SMART_PLANNER_OUTPUT_DIR')}")
 
-# Helper functions for job storage (JSON files in OUTPUT_DIR)
+# File-based job store — use Azure persistent HOME directory when available,
+# otherwise fall back to temp (local dev). HOME persists across instance restarts.
+_PERSISTENT_BASE = Path(os.environ.get("HOME", "")) / "smart_planner" if os.environ.get("HOME") else _TMP_BASE
+_JOBS_DIR = _PERSISTENT_BASE / "jobs"
+_JOBS_DIR.mkdir(parents=True, exist_ok=True)
+logging.info(f"[INIT] _JOBS_DIR: {_JOBS_DIR}")
+
+# Helper functions for job storage (JSON files in _JOBS_DIR)
 def _get_job_file(job_id: str) -> Path:
     """Get the JSON file path for a job."""
-    return OUTPUT_DIR / f"job_{job_id}.json"
+    return _JOBS_DIR / f"job_{job_id}.json"
 
 
 def _save_job(job_id: str, job_data: Dict[str, Any]) -> None:
     """Save job data to a JSON file."""
     job_file = _get_job_file(job_id)
     logging.info(f"[JOB] Saving job {job_id} to {job_file}")
-    logging.info(f"[JOB] OUTPUT_DIR: {OUTPUT_DIR}")
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    _JOBS_DIR.mkdir(parents=True, exist_ok=True)
     with open(job_file, "w") as f:
         json.dump(job_data, f, indent=2, default=str)
-    logging.info(f"[JOB] Job {job_id} saved successfully")
+    logging.info(f"[JOB] Job {job_id} saved. exists={job_file.exists()}")
 
 
 def _load_job(job_id: str) -> Optional[Dict[str, Any]]:
     """Load job data from a JSON file."""
     job_file = _get_job_file(job_id)
-    logging.info(f"[JOB] Loading job {job_id} from {job_file}")
-    logging.info(f"[JOB] OUTPUT_DIR: {OUTPUT_DIR}")
-    logging.info(f"[JOB] Job file exists: {job_file.exists()}")
+    logging.info(f"[JOB] Loading job {job_id} from {job_file}, exists={job_file.exists()}")
     if not job_file.exists():
-        logging.warning(f"[JOB] Job file not found: {job_file}")
+        existing = list(_JOBS_DIR.glob("job_*.json")) if _JOBS_DIR.exists() else []
+        logging.warning(f"[JOB] Job not found. Existing: {[f.name for f in existing]}")
         return None
     try:
         with open(job_file, "r") as f:
-            return json.load(f)
+            data = json.load(f)
+        logging.info(f"[JOB] Loaded job {job_id}, status={data.get('status')}")
+        return data
     except Exception as e:
         logging.error(f"Error loading job {job_id}: {e}")
         return None
 
 
 def _get_all_job_ids() -> list:
-    """Get all job IDs from JSON files in OUTPUT_DIR."""
-    logging.info(f"[JOB] Scanning for jobs in {OUTPUT_DIR}")
-    job_files = list(OUTPUT_DIR.glob("job_*.json"))
-    logging.info(f"[JOB] Found {len(job_files)} job files: {job_files}")
+    """Get all job IDs from JSON files in _JOBS_DIR."""
+    job_files = list(_JOBS_DIR.glob("job_*.json"))
     return [
         f.stem.replace("job_", "")
         for f in job_files

@@ -27,8 +27,11 @@ OUTPUT_DIR = Path(
     or (BASE_DIR / "data" / "output")
 )
 
-# File-based job store so all function workers/processes can share state.
-_JOBS_DIR = _TMP_BASE / "jobs"
+# File-based job store — use Azure persistent HOME directory when available,
+# otherwise fall back to temp (local dev). HOME persists across instance restarts
+# and is shared across scale-out instances on Azure App Service / Functions.
+_PERSISTENT_BASE = Path(os.environ.get("HOME", "")) / "smart_planner" if os.environ.get("HOME") else _TMP_BASE
+_JOBS_DIR = _PERSISTENT_BASE / "jobs"
 _JOBS_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -36,17 +39,26 @@ def _save_job(job_id: str, data: Dict[str, Any]) -> None:
     """Persist job state to a JSON file."""
     _JOBS_DIR.mkdir(parents=True, exist_ok=True)
     job_file = _JOBS_DIR / f"{job_id}.json"
+    print(f"[JOB] Saving job {job_id} to {job_file} (status={data.get('status')})")
     job_file.write_text(_json.dumps(data, default=str), encoding="utf-8")
+    print(f"[JOB] Saved. File exists: {job_file.exists()}, size: {job_file.stat().st_size}")
 
 
 def _load_job(job_id: str) -> Optional[Dict[str, Any]]:
     """Load job state from disk. Returns None if not found."""
     job_file = _JOBS_DIR / f"{job_id}.json"
+    print(f"[JOB] Loading job {job_id} from {job_file}, exists: {job_file.exists()}")
     if not job_file.exists():
+        # List what's in the jobs dir for debugging
+        existing = list(_JOBS_DIR.glob("*.json")) if _JOBS_DIR.exists() else []
+        print(f"[JOB] Job not found. Existing jobs: {[f.name for f in existing]}")
         return None
     try:
-        return _json.loads(job_file.read_text(encoding="utf-8"))
-    except Exception:
+        data = _json.loads(job_file.read_text(encoding="utf-8"))
+        print(f"[JOB] Loaded job {job_id}, status={data.get('status')}")
+        return data
+    except Exception as e:
+        print(f"[JOB] Error loading job {job_id}: {e}")
         return None
 
 
