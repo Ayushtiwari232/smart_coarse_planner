@@ -2490,20 +2490,20 @@ def start_plan_job(
         }
         _save_job(job_id, job_data)
 
-        thread = threading.Thread(
-            target=_run_plan,
-            args=(job_id, input_file, user_input),
-            daemon=True,
-        )
-        thread.start()
+        # Run synchronously — background threads get killed by Azure Functions
+        _run_plan(job_id, input_file, user_input)
 
-        print(f"[PLAN] Job accepted: {job_id}")
+        # Reload the job to get final status
+        final_job = _load_job(job_id)
+
+        print(f"[PLAN] Job completed: {job_id}, status={final_job.get('status') if final_job else 'unknown'}")
 
         return {
-            "status": "accepted",
+            "status": final_job.get("status", "error") if final_job else "error",
             "job_id": job_id,
-            "poll_url": f"/plan/{job_id}",
             "file_url": f"/plan/{job_id}/file",
+            "file_name": final_job.get("file_name") if final_job else None,
+            "message": final_job.get("message") if final_job and final_job.get("status") == "error" else "Plan completed",
         }
 
     except Exception as e:
