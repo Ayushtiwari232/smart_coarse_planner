@@ -33,7 +33,8 @@ jobs:
 
       - name: Zip artifact for deployment
         run: |
-          zip -r release.zip * .funcignore \
+          cd smart_coarse_planner
+          zip -r ../release.zip * .funcignore \
             -x "venv/*" \
             -x ".venv/*" \
             -x "env/*" \
