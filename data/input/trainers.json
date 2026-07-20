@@ -1,0 +1,1614 @@
+{
+  "source_file": "phc_planning_2026 (1).xlsx",
+  "sheet": "Planning2026",
+  "period": "2026-09-01 to 2026-12-31",
+  "notes": [
+    "Dates shown are workbook planning columns for working days only; weekends are not present in the planning grid.",
+    "Legend mapping is inferred from the visible row-4 labels and cell fill IDs. Course/session bars without a visible row-4 legend label are grouped as planned_or_booked."
+  ],
+  "legend": {
+    "available": "Blank normal planning cells (fill IDs 20/39) treated as available.",
+    "on_leave": "Cells using the row-4 Holidays legend color (fill ID 5). '%' markers are preserved.",
+    "work_at_home": "Row-4 Work@home legend color (fill ID 6).",
+    "teds_plan": "Row-4 TEDS plan legend colors (fill IDs 4/15/18).",
+    "option": "Row-4 Option legend colors (fill IDs 22/0 when used as a planning mark).",
+    "system_reserved": "Row-4 Syst. Reserved legend color (fill ID 12).",
+    "spooling": "Row-4 Spooling legend color (fill ID 11).",
+    "comm_gbs": "Row-4 Comm. GBS legend color (fill ID 13).",
+    "time_zone_or_time_shift": "Row-4 time zone/time shift legend color (fill ID 14).",
+    "planned_or_booked": "Grey/colored bars with course/session text or continuation cells not directly named in the visible legend."
+  },
+  "trainers": [
+    {
+      "trainer": "Gelauff, Christiaan",
+      "row": 7,
+      "months": {
+        "july": {
+          "available_ranges": [
+            {
+              "start": "2026-07-02",
+              "end": "2026-07-07",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-07-09",
+              "end": "2026-07-14",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-07-16",
+              "end": "2026-07-17",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-07-23",
+              "end": "2026-07-24",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-07-27",
+              "end": "2026-07-28",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-07-30",
+              "end": "2026-07-31",
+              "fill_id": 39
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-07-01",
+              "end": "2026-07-01",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-08",
+              "end": "2026-07-08",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-15",
+              "end": "2026-07-15",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-20",
+              "end": "2026-07-21",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-22",
+              "end": "2026-07-22",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-29",
+              "end": "2026-07-29",
+              "marker": "%",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": []
+        },
+        "august": {
+          "available_ranges": [
+            {
+              "start": "2026-08-03",
+              "end": "2026-08-04",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-08-05",
+              "end": "2026-08-05",
+              "marker": "%",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-08-06",
+              "end": "2026-08-06",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-08-10",
+              "end": "2026-08-11",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-08-12",
+              "end": "2026-08-12",
+              "marker": "%",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-08-13",
+              "end": "2026-08-13",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-08-31",
+              "end": "2026-08-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-08-14",
+              "end": "2026-08-18",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-08-19",
+              "end": "2026-08-19",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-08-20",
+              "end": "2026-08-25",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-08-26",
+              "end": "2026-08-28",
+              "marker": "%",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": [
+            {
+              "start": "2026-08-07",
+              "end": "2026-08-07",
+              "status": "planned_or_booked",
+              "fill_id": 38
+            }
+          ]
+        },
+        "september": {
+          "available_ranges": [
+            {
+              "start": "2026-09-01",
+              "end": "2026-09-01",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-09-02",
+              "end": "2026-09-02",
+              "marker": "%",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-09-03",
+              "end": "2026-09-04",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-09-07",
+              "end": "2026-09-08",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-11",
+              "end": "2026-09-11",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-14",
+              "end": "2026-09-15",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-09-17",
+              "end": "2026-09-22",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-09-23",
+              "end": "2026-09-23",
+              "marker": "%",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-09-24",
+              "end": "2026-09-24",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-09-25",
+              "end": "2026-09-25",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-28",
+              "end": "2026-09-29",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-09-30",
+              "end": "2026-09-30",
+              "marker": "%",
+              "fill_id": 39
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-09-09",
+              "end": "2026-09-09",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-09-16",
+              "end": "2026-09-16",
+              "marker": "%",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": [
+            {
+              "start": "2026-09-10",
+              "end": "2026-09-10",
+              "status": "planned_or_booked",
+              "fill_id": 17
+            }
+          ]
+        }
+      }
+    },
+    {
+      "trainer": "Gonzalez van Keulen, Luis",
+      "row": 9,
+      "months": {
+        "july": {
+          "available_ranges": [
+            {
+              "start": "2026-07-01",
+              "end": "2026-07-02",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-07-06",
+              "end": "2026-07-09",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-07-14",
+              "end": "2026-07-16",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-07-21",
+              "end": "2026-07-23",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-07-28",
+              "end": "2026-07-30",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-07-03",
+              "end": "2026-07-03",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-10",
+              "end": "2026-07-10",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-13",
+              "end": "2026-07-13",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-17",
+              "end": "2026-07-17",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-20",
+              "end": "2026-07-20",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-24",
+              "end": "2026-07-24",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-27",
+              "end": "2026-07-27",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-31",
+              "end": "2026-07-31",
+              "marker": "%",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": []
+        },
+        "august": {
+          "available_ranges": [
+            {
+              "start": "2026-08-04",
+              "end": "2026-08-06",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-08-11",
+              "end": "2026-08-13",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-08-18",
+              "end": "2026-08-20",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-08-24",
+              "end": "2026-08-27",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-08-31",
+              "end": "2026-08-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-08-03",
+              "end": "2026-08-03",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-08-07",
+              "end": "2026-08-07",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-08-10",
+              "end": "2026-08-10",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-08-14",
+              "end": "2026-08-14",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-08-17",
+              "end": "2026-08-17",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-08-21",
+              "end": "2026-08-21",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-08-28",
+              "end": "2026-08-28",
+              "marker": "%",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": []
+        },
+        "september": {
+          "available_ranges": [
+            {
+              "start": "2026-09-01",
+              "end": "2026-09-03",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-22",
+              "end": "2026-09-24",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-28",
+              "end": "2026-09-30",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-09-04",
+              "end": "2026-09-04",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-09-07",
+              "end": "2026-09-10",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-09-11",
+              "end": "2026-09-11",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-09-14",
+              "end": "2026-09-17",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-09-18",
+              "end": "2026-09-18",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-09-21",
+              "end": "2026-09-21",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-09-25",
+              "end": "2026-09-25",
+              "marker": "%",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": []
+        }
+      }
+    },
+    {
+      "trainer": "Groot, Tristan de",
+      "row": 11,
+      "months": {
+        "july": {
+          "available_ranges": [
+            {
+              "start": "2026-07-01",
+              "end": "2026-07-09",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-07-10",
+              "end": "2026-07-31",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": []
+        },
+        "august": {
+          "available_ranges": [
+            {
+              "start": "2026-08-03",
+              "end": "2026-08-03",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-08-06",
+              "end": "2026-08-13",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-08-17",
+              "end": "2026-08-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": [
+            {
+              "start": "2026-08-04",
+              "end": "2026-08-04",
+              "status": "planned_or_booked",
+              "fill_id": 38
+            },
+            {
+              "start": "2026-08-05",
+              "end": "2026-08-05",
+              "status": "planned_or_booked",
+              "marker": "2BL001: Blue",
+              "fill_id": 46
+            },
+            {
+              "start": "2026-08-14",
+              "end": "2026-08-14",
+              "status": "planned_or_booked",
+              "marker": "2BL001: Blue",
+              "fill_id": 46
+            }
+          ]
+        },
+        "september": {
+          "available_ranges": [
+            {
+              "start": "2026-09-01",
+              "end": "2026-09-11",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-15",
+              "end": "2026-09-18",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-22",
+              "end": "2026-09-25",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-30",
+              "end": "2026-09-30",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": [
+            {
+              "start": "2026-09-14",
+              "end": "2026-09-14",
+              "status": "teds_plan",
+              "marker": "2BL001: Green",
+              "fill_id": 18
+            },
+            {
+              "start": "2026-09-21",
+              "end": "2026-09-21",
+              "status": "teds_plan",
+              "marker": "2BL001: Green",
+              "fill_id": 18
+            },
+            {
+              "start": "2026-09-28",
+              "end": "2026-09-28",
+              "status": "teds_plan",
+              "marker": "2BL001: Green",
+              "fill_id": 18
+            },
+            {
+              "start": "2026-09-29",
+              "end": "2026-09-29",
+              "status": "planned_or_booked",
+              "fill_id": 41
+            }
+          ]
+        }
+      }
+    },
+    {
+      "trainer": "Mierlo, Frank van",
+      "row": 13,
+      "months": {
+        "july": {
+          "available_ranges": [
+            {
+              "start": "2026-07-01",
+              "end": "2026-07-09",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-07-10",
+              "end": "2026-07-31",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": []
+        },
+        "august": {
+          "available_ranges": [
+            {
+              "start": "2026-08-03",
+              "end": "2026-08-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        },
+        "september": {
+          "available_ranges": [
+            {
+              "start": "2026-09-01",
+              "end": "2026-09-30",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        }
+      }
+    },
+    {
+      "trainer": "Miraglia, Maurizio",
+      "row": 15,
+      "months": {
+        "july": {
+          "available_ranges": [
+            {
+              "start": "2026-07-01",
+              "end": "2026-07-24",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-07-27",
+              "end": "2026-07-28",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-07-29",
+              "end": "2026-07-29",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-07-30",
+              "end": "2026-07-31",
+              "fill_id": 39
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        },
+        "august": {
+          "available_ranges": [
+            {
+              "start": "2026-08-03",
+              "end": "2026-08-06",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-08-07",
+              "end": "2026-08-07",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-08-11",
+              "end": "2026-08-13",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-08-17",
+              "end": "2026-08-18",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-08-19",
+              "end": "2026-08-19",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-08-20",
+              "end": "2026-08-27",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-08-28",
+              "end": "2026-08-28",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-08-31",
+              "end": "2026-08-31",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": [
+            {
+              "start": "2026-08-10",
+              "end": "2026-08-10",
+              "status": "planned_or_booked",
+              "fill_id": 38
+            },
+            {
+              "start": "2026-08-14",
+              "end": "2026-08-14",
+              "status": "planned_or_booked",
+              "fill_id": 38
+            }
+          ]
+        },
+        "september": {
+          "available_ranges": [
+            {
+              "start": "2026-09-21",
+              "end": "2026-09-30",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-09-01",
+              "end": "2026-09-18",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": []
+        }
+      }
+    },
+    {
+      "trainer": "Rooij, Mitchel van",
+      "row": 17,
+      "months": {
+        "july": {
+          "available_ranges": [
+            {
+              "start": "2026-07-01",
+              "end": "2026-07-03",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-07-07",
+              "end": "2026-07-10",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-07-14",
+              "end": "2026-07-17",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-07-21",
+              "end": "2026-07-24",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-07-28",
+              "end": "2026-07-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-07-06",
+              "end": "2026-07-06",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-13",
+              "end": "2026-07-13",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-20",
+              "end": "2026-07-20",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-27",
+              "end": "2026-07-27",
+              "marker": "%",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": []
+        },
+        "august": {
+          "available_ranges": [
+            {
+              "start": "2026-08-04",
+              "end": "2026-08-07",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-08-11",
+              "end": "2026-08-14",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-08-18",
+              "end": "2026-08-21",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-08-25",
+              "end": "2026-08-25",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-08-27",
+              "end": "2026-08-27",
+              "fill_id": 39
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-08-03",
+              "end": "2026-08-03",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-08-10",
+              "end": "2026-08-10",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-08-17",
+              "end": "2026-08-17",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-08-24",
+              "end": "2026-08-24",
+              "marker": "%",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": [
+            {
+              "start": "2026-08-26",
+              "end": "2026-08-26",
+              "status": "planned_or_booked",
+              "fill_id": 38
+            },
+            {
+              "start": "2026-08-28",
+              "end": "2026-08-28",
+              "status": "planned_or_booked",
+              "fill_id": 38
+            },
+            {
+              "start": "2026-08-31",
+              "end": "2026-08-31",
+              "status": "planned_or_booked",
+              "fill_id": 23
+            }
+          ]
+        },
+        "september": {
+          "available_ranges": [
+            {
+              "start": "2026-09-08",
+              "end": "2026-09-11",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-15",
+              "end": "2026-09-15",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-09-17",
+              "end": "2026-09-18",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-09-22",
+              "end": "2026-09-24",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-09-29",
+              "end": "2026-09-30",
+              "fill_id": 39
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-09-07",
+              "end": "2026-09-07",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-09-14",
+              "end": "2026-09-14",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-09-16",
+              "end": "2026-09-16",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-09-21",
+              "end": "2026-09-21",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-09-28",
+              "end": "2026-09-28",
+              "marker": "%",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": [
+            {
+              "start": "2026-09-01",
+              "end": "2026-09-03",
+              "status": "planned_or_booked",
+              "fill_id": 23
+            },
+            {
+              "start": "2026-09-04",
+              "end": "2026-09-04",
+              "status": "planned_or_booked",
+              "fill_id": 7
+            },
+            {
+              "start": "2026-09-25",
+              "end": "2026-09-25",
+              "status": "planned_or_booked",
+              "fill_id": 38
+            }
+          ]
+        }
+      }
+    },
+    {
+      "trainer": "Zandstra, Peter",
+      "row": 19,
+      "months": {
+        "july": {
+          "available_ranges": [
+            {
+              "start": "2026-07-01",
+              "end": "2026-07-02",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-07-06",
+              "end": "2026-07-08",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-07-03",
+              "end": "2026-07-03",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-09",
+              "end": "2026-07-09",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-10",
+              "end": "2026-07-10",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-13",
+              "end": "2026-07-16",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-17",
+              "end": "2026-07-17",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-20",
+              "end": "2026-07-23",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-24",
+              "end": "2026-07-24",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-27",
+              "end": "2026-07-30",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-07-31",
+              "end": "2026-07-31",
+              "marker": "%",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": []
+        },
+        "august": {
+          "available_ranges": [
+            {
+              "start": "2026-08-04",
+              "end": "2026-08-06",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-08-10",
+              "end": "2026-08-13",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-08-17",
+              "end": "2026-08-20",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-08-24",
+              "end": "2026-08-27",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-08-31",
+              "end": "2026-08-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-08-03",
+              "end": "2026-08-03",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-08-07",
+              "end": "2026-08-07",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-08-14",
+              "end": "2026-08-14",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-08-21",
+              "end": "2026-08-21",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-08-28",
+              "end": "2026-08-28",
+              "marker": "%",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": []
+        },
+        "september": {
+          "available_ranges": [
+            {
+              "start": "2026-09-01",
+              "end": "2026-09-03",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-07",
+              "end": "2026-09-08",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-14",
+              "end": "2026-09-17",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-21",
+              "end": "2026-09-24",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-28",
+              "end": "2026-09-30",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-09-04",
+              "end": "2026-09-04",
+              "marker": "%",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-09-09",
+              "end": "2026-09-11",
+              "marker": "%",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": [
+            {
+              "start": "2026-09-18",
+              "end": "2026-09-18",
+              "status": "option",
+              "marker": "%",
+              "fill_id": 22
+            },
+            {
+              "start": "2026-09-25",
+              "end": "2026-09-25",
+              "status": "option",
+              "marker": "%",
+              "fill_id": 22
+            }
+          ]
+        }
+      }
+    },
+    {
+      "trainer": "Kuijsten, Nick",
+      "row": 21,
+      "months": {
+        "july": {
+          "available_ranges": [
+            {
+              "start": "2026-07-01",
+              "end": "2026-07-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        },
+        "august": {
+          "available_ranges": [
+            {
+              "start": "2026-08-03",
+              "end": "2026-08-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        },
+        "september": {
+          "available_ranges": [
+            {
+              "start": "2026-09-01",
+              "end": "2026-09-14",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-16",
+              "end": "2026-09-23",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-28",
+              "end": "2026-09-30",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-09-15",
+              "end": "2026-09-15",
+              "fill_id": 5
+            },
+            {
+              "start": "2026-09-24",
+              "end": "2026-09-25",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": []
+        }
+      }
+    },
+    {
+      "trainer": "Bommel, Martienn van",
+      "row": 23,
+      "months": {
+        "july": {
+          "available_ranges": [
+            {
+              "start": "2026-07-01",
+              "end": "2026-07-16",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-07-28",
+              "end": "2026-07-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-07-17",
+              "end": "2026-07-27",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": []
+        },
+        "august": {
+          "available_ranges": [
+            {
+              "start": "2026-08-03",
+              "end": "2026-08-05",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-08-07",
+              "end": "2026-08-07",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-08-10",
+              "end": "2026-08-10",
+              "marker": "2BL001",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-08-11",
+              "end": "2026-08-14",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-08-17",
+              "end": "2026-08-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": [
+            {
+              "start": "2026-08-06",
+              "end": "2026-08-06",
+              "status": "planned_or_booked",
+              "marker": "2BL001: Green",
+              "fill_id": 46
+            }
+          ]
+        },
+        "september": {
+          "available_ranges": [
+            {
+              "start": "2026-09-01",
+              "end": "2026-09-04",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-21",
+              "end": "2026-09-21",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-24",
+              "end": "2026-09-25",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-28",
+              "end": "2026-09-28",
+              "marker": "BL001",
+              "fill_id": 39
+            },
+            {
+              "start": "2026-09-29",
+              "end": "2026-09-30",
+              "fill_id": 39
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": [
+            {
+              "start": "2026-09-07",
+              "end": "2026-09-07",
+              "status": "option",
+              "marker": "1IL003",
+              "fill_id": 22
+            },
+            {
+              "start": "2026-09-08",
+              "end": "2026-09-18",
+              "status": "option",
+              "fill_id": 22
+            },
+            {
+              "start": "2026-09-22",
+              "end": "2026-09-22",
+              "status": "planned_or_booked",
+              "marker": "2",
+              "fill_id": 7
+            },
+            {
+              "start": "2026-09-23",
+              "end": "2026-09-23",
+              "status": "planned_or_booked",
+              "marker": "2BL001: Blue",
+              "fill_id": 46
+            }
+          ]
+        }
+      }
+    },
+    {
+      "trainer": "Corina Nedelea",
+      "row": 25,
+      "months": {
+        "july": {
+          "available_ranges": [
+            {
+              "start": "2026-07-06",
+              "end": "2026-07-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-07-01",
+              "end": "2026-07-03",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": []
+        },
+        "august": {
+          "available_ranges": [
+            {
+              "start": "2026-08-03",
+              "end": "2026-08-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        },
+        "september": {
+          "available_ranges": [
+            {
+              "start": "2026-09-01",
+              "end": "2026-09-30",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        }
+      }
+    },
+    {
+      "trainer": "Steven fokkenrood",
+      "row": 27,
+      "months": {
+        "july": {
+          "available_ranges": [
+            {
+              "start": "2026-07-01",
+              "end": "2026-07-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        },
+        "august": {
+          "available_ranges": [
+            {
+              "start": "2026-08-03",
+              "end": "2026-08-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        },
+        "september": {
+          "available_ranges": [
+            {
+              "start": "2026-09-01",
+              "end": "2026-09-30",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        }
+      }
+    },
+    {
+      "trainer": "Ankersmit, Wendy",
+      "row": 29,
+      "months": {
+        "july": {
+          "available_ranges": [
+            {
+              "start": "2026-07-01",
+              "end": "2026-07-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        },
+        "august": {
+          "available_ranges": [
+            {
+              "start": "2026-08-03",
+              "end": "2026-08-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        },
+        "september": {
+          "available_ranges": [
+            {
+              "start": "2026-09-01",
+              "end": "2026-09-28",
+              "fill_id": 20
+            },
+            {
+              "start": "2026-09-30",
+              "end": "2026-09-30",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": [
+            {
+              "start": "2026-09-29",
+              "end": "2026-09-29",
+              "status": "planned_or_booked",
+              "fill_id": 41
+            }
+          ]
+        }
+      }
+    },
+    {
+      "trainer": "Jansen, Sonja",
+      "row": 30,
+      "months": {
+        "july": {
+          "available_ranges": [
+            {
+              "start": "2026-07-01",
+              "end": "2026-07-17",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-07-20",
+              "end": "2026-07-31",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": []
+        },
+        "august": {
+          "available_ranges": [
+            {
+              "start": "2026-08-10",
+              "end": "2026-08-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [
+            {
+              "start": "2026-08-03",
+              "end": "2026-08-07",
+              "fill_id": 5
+            }
+          ],
+          "other_legend_or_planned_ranges": []
+        },
+        "september": {
+          "available_ranges": [
+            {
+              "start": "2026-09-01",
+              "end": "2026-09-30",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        }
+      }
+    },
+    {
+      "trainer": "Guest Teacher 1",
+      "row": 32,
+      "months": {
+        "july": {
+          "available_ranges": [
+            {
+              "start": "2026-07-01",
+              "end": "2026-07-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        },
+        "august": {
+          "available_ranges": [
+            {
+              "start": "2026-08-03",
+              "end": "2026-08-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        },
+        "september": {
+          "available_ranges": [
+            {
+              "start": "2026-09-01",
+              "end": "2026-09-30",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        }
+      }
+    },
+    {
+      "trainer": "Guest Teacher 2",
+      "row": 34,
+      "months": {
+        "july": {
+          "available_ranges": [
+            {
+              "start": "2026-07-01",
+              "end": "2026-07-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        },
+        "august": {
+          "available_ranges": [
+            {
+              "start": "2026-08-03",
+              "end": "2026-08-31",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        },
+        "september": {
+          "available_ranges": [
+            {
+              "start": "2026-09-01",
+              "end": "2026-09-30",
+              "fill_id": 20
+            }
+          ],
+          "on_leave_ranges": [],
+          "other_legend_or_planned_ranges": []
+        }
+      }
+    }
+  ]
+}
