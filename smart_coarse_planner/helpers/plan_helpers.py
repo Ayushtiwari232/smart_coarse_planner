@@ -2498,13 +2498,22 @@ def start_plan_job(
 
         print(f"[PLAN] Job completed: {job_id}, status={final_job.get('status') if final_job else 'unknown'}")
 
-        return {
-            "status": final_job.get("status", "error") if final_job else "error",
-            "job_id": job_id,
-            "file_url": f"/plan/{job_id}/file",
-            "file_name": final_job.get("file_name") if final_job else None,
-            "message": final_job.get("message") if final_job and final_job.get("status") == "error" else "Plan completed",
-        }
+        if final_job and final_job.get("status") == "success":
+            return {
+                "status": "success",
+                "job_id": job_id,
+                "file_url": f"/plan/{job_id}/file",
+                "file_name": final_job.get("file_name"),
+                "message": "Plan completed successfully",
+            }
+        else:
+            return {
+                "status": "error",
+                "job_id": job_id,
+                "message": final_job.get("message") or final_job.get("error") if final_job else "Job result not found",
+                "error": final_job.get("error") if final_job else None,
+                "traceback": final_job.get("traceback") if final_job else None,
+            }
 
     except Exception as e:
         _release_plan_lock()
