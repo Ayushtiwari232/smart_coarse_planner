@@ -26,12 +26,10 @@ def _count_tokens(text: str, model: str = "gpt-4o") -> int:
     return len(enc.encode(text))
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "input")
-# _DEFAULT_OUTPUT_DIR = os.path.abspath(
-#     os.path.join(os.path.dirname(__file__), "..", "data", "output")
-# )
-# OUTPUT_DIR = os.environ.get("SMART_PLANNER_OUTPUT_DIR") or _DEFAULT_OUTPUT_DIR
 
-_DEFAULT_OUTPUT_DIR = os.path.join(
+# Use persistent HOME directory on Azure, fall back to /tmp for local dev
+_HOME_BASE = os.path.join(os.environ.get("HOME", ""), "smart_planner", "output") if os.environ.get("HOME") else None
+_DEFAULT_OUTPUT_DIR = _HOME_BASE or os.path.join(
     tempfile.gettempdir(),
     "smart_planner",
     "output"
