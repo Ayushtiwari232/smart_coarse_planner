@@ -51,7 +51,7 @@ def apply_filters(input: str = None, input_file: str = None) -> dict:
             "input": input,
             "total_rows_before_filter": len(df),
             "total_rows_after_filter": len(filtered_df),
-            "output_file": output_filename,
+            "output_file": output_path,
         }
     except Exception as e:
         print(f"[FILTER] ERROR: {e}")
