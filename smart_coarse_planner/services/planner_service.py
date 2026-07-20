@@ -430,7 +430,7 @@ def plan_courses(session_data: dict) -> dict:
 
         return {
             "total_sessions_planned": len(result.sessions),
-            "output_file": "course_plan_v1.xlsx",
+            "output_file": output_path,
             "plan": rows,
         }
     except Exception as e:
