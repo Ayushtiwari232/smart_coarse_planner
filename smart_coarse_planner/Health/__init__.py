@@ -8,7 +8,8 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
     response = {
         "status": "ok",
-        "message": "Azure Function is running"
+        "message": "Azure Function is running",
+        "version": "1.1"
     }
 
     return func.HttpResponse(
