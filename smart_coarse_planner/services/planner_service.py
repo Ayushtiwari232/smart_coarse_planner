@@ -34,7 +34,7 @@ _HOME_BASE = os.path.join(os.environ.get("HOME", ""), "smart_planner", "output")
 _DEFAULT_OUTPUT_DIR = _HOME_BASE or os.path.join(tempfile.gettempdir(), "smart_planner", "output")
 OUTPUT_DIR = os.environ.get("SMART_PLANNER_OUTPUT_DIR") or _DEFAULT_OUTPUT_DIR
 
-TRAINER_LEAVE_FILE = "trainer_holidays_sep_to_dec_2026.xlsx"
+TRAINER_LEAVE_FILE = "trainer_leave_dates_2026.xlsx"
 PRIORITY_FILE = "priority_to_train_list.xlsx"
 LOCATION_FILE = "Smart course planner Trainer per location.xlsx"
 TRAINERS_JSON_FILE = "trainers.json"
@@ -63,7 +63,7 @@ class CoursePlan(BaseModel):
 
 
 def _load_trainer_leave_dates() -> tuple[list[dict], str]:
-    """Load trainer leave/holiday dates from trainer_holidays_sep_to_dec_2026.xlsx."""
+    """Load trainer leave/holiday dates from trainer_leave_dates_2026.xlsx."""
     path = os.path.join(INPUT_DIR, TRAINER_LEAVE_FILE)
     df = pd.read_excel(path)
 
