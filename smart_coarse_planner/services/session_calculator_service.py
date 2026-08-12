@@ -6,9 +6,11 @@ import traceback
 import pandas as pd
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "input")
-_DEFAULT_OUTPUT_DIR = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "data", "output")
-)
+
+# Azure Functions deploys application files under /home/site/wwwroot, which is
+# read-only. Use HOME on Azure and /tmp during local development instead.
+_HOME_BASE = os.path.join(os.environ.get("HOME", ""), "smart_planner", "output") if os.environ.get("HOME") else None
+_DEFAULT_OUTPUT_DIR = _HOME_BASE or os.path.join(tempfile.gettempdir(), "smart_planner", "output")
 OUTPUT_DIR = os.environ.get("SMART_PLANNER_OUTPUT_DIR") or _DEFAULT_OUTPUT_DIR
 
 FILTERED_FILE = "filtered_output_v3.xlsx"

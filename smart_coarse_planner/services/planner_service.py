@@ -27,9 +27,11 @@ def _count_tokens(text: str, model: str = "gpt-4o") -> int:
     return len(enc.encode(text))
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "input")
-_DEFAULT_OUTPUT_DIR = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "data", "output")
-)
+
+# Azure Functions deploys application files under /home/site/wwwroot, which is
+# read-only. Use HOME on Azure and /tmp during local development instead.
+_HOME_BASE = os.path.join(os.environ.get("HOME", ""), "smart_planner", "output") if os.environ.get("HOME") else None
+_DEFAULT_OUTPUT_DIR = _HOME_BASE or os.path.join(tempfile.gettempdir(), "smart_planner", "output")
 OUTPUT_DIR = os.environ.get("SMART_PLANNER_OUTPUT_DIR") or _DEFAULT_OUTPUT_DIR
 
 TRAINER_LEAVE_FILE = "trainer_holidays_sep_to_dec_2026.xlsx"
@@ -177,6 +179,57 @@ def _load_trainer_locations() -> dict[str, dict]:
     except Exception as e:
         print(f"[PLANNER] WARNING: Could not load location file: {e}")
         return {}
+
+
+def _trainer_location(trainer_name: str, location_lookup: dict[str, dict]) -> str:
+    """Return the trainer's assigned location, or Others when it is unknown."""
+    for alias in _trainer_name_aliases(trainer_name):
+        if alias in location_lookup:
+            return location_lookup[alias]["location"]
+    return "Others"
+
+
+def _load_classroom_assignments() -> dict[str, dict[str, str]]:
+    """Load default and CTC-specific classroom assignments by course code.
+
+    The CTC room column is optional to retain compatibility with older schedule files.
+    """
+    path = os.path.join(INPUT_DIR, COURSE_SCHEDULE_FILE)
+    try:
+        schedule_df = pd.read_excel(path)
+        normalized_columns = {
+            " ".join(str(column).strip().lower().split()): column
+            for column in schedule_df.columns
+        }
+        ctc_room_column = normalized_columns.get("ctc training rooms per class")
+        assignments: dict[str, dict[str, str]] = {}
+        for _, row in schedule_df.iterrows():
+            course_code = str(row.get("Course Code", "")).strip()
+            if not course_code or course_code.lower() == "nan" or course_code in assignments:
+                continue
+            default_room = str(row.get("Preferred Classroom", "")).strip()
+            ctc_room = str(row.get(ctc_room_column, "")).strip() if ctc_room_column else ""
+            assignments[course_code] = {
+                "default": "" if default_room.lower() == "nan" else default_room,
+                "ctc": "" if ctc_room.lower() == "nan" else ctc_room,
+            }
+        return assignments
+    except Exception as e:
+        print(f"[PLANNER] WARNING: Could not load classroom assignments: {e}")
+        return {}
+
+
+def _classroom_for_session(
+    course_code: str,
+    trainer_name: str,
+    classroom_assignments: dict[str, dict[str, str]],
+    location_lookup: dict[str, dict],
+) -> str:
+    """Choose the CTC room for CTC trainers; otherwise choose the default room."""
+    rooms = classroom_assignments.get(course_code, {})
+    if _trainer_location(trainer_name, location_lookup) == "CTC" and rooms.get("ctc"):
+        return rooms["ctc"]
+    return rooms.get("default", "")
 
 
 def _load_parttime_days_from_json() -> dict[str, set]:
@@ -571,15 +624,8 @@ def _write_lab_availability_sheet(output_path: str, sessions: list[dict]) -> Non
         print(f"[PLANNER] WARNING: Could not load course schedule for lab sheet: {e}")
         return
 
-    # Build course → first classroom raw string
-    classroom_lookup: dict[str, str] = {}
-    for _, row in schedule_df.iterrows():
-        code = str(row.get("Course Code", "")).strip()
-        raw  = str(row.get("Preferred Classroom", "")).strip()
-        if code and raw and raw.lower() != "nan" and code not in classroom_lookup:
-            classroom_lookup[code] = raw
-
     location_lookup = _load_trainer_locations()
+    classroom_assignments = _load_classroom_assignments()
 
     plan_start, plan_end = _get_planning_period_from_json()
     if not plan_start or not plan_end:
@@ -615,15 +661,13 @@ def _write_lab_availability_sheet(output_path: str, sessions: list[dict]) -> Non
         if pd.isna(sd) or pd.isna(ed):
             continue
 
-        classroom_raw = classroom_lookup.get(course_code, "")
+        classroom_raw = _classroom_for_session(
+            course_code, trainer_name, classroom_assignments, location_lookup
+        )
         if not classroom_raw or classroom_raw.lower() == "nan":
             classroom_raw = course_code  # fallback: use course code as lab identifier
 
-        trainer_loc = "Others"
-        for alias in _trainer_name_aliases(trainer_name):
-            if alias in location_lookup:
-                trainer_loc = location_lookup[alias]["location"]
-                break
+        trainer_loc = _trainer_location(trainer_name, location_lookup)
 
         for lab, lab_start, lab_end in _parse_classrooms(classroom_raw, sd.date(), ed.date()):
             lab_locations.setdefault(lab, trainer_loc)
@@ -990,17 +1034,7 @@ def _write_utilization_metrics_sheet(
         })
 
     # --- Lab/Room Utilization ---
-    schedule_path = os.path.join(INPUT_DIR, COURSE_SCHEDULE_FILE)
-    classroom_lookup: dict[str, str] = {}
-    try:
-        schedule_df = pd.read_excel(schedule_path)
-        for _, row in schedule_df.iterrows():
-            code = str(row.get("Course Code", "")).strip()
-            raw = str(row.get("Preferred Classroom", "")).strip()
-            if code and raw and raw.lower() != "nan" and code not in classroom_lookup:
-                classroom_lookup[code] = raw
-    except Exception:
-        pass
+    classroom_assignments = _load_classroom_assignments()
 
     lab_booked_days: dict[str, set] = {}
     for s in sessions:
@@ -1010,7 +1044,12 @@ def _write_utilization_metrics_sheet(
         if pd.isna(sd) or pd.isna(ed):
             continue
 
-        classroom_raw = classroom_lookup.get(course_code, "")
+        classroom_raw = _classroom_for_session(
+            course_code,
+            str(s.get("trainer_name", "")).strip(),
+            classroom_assignments,
+            location_lookup,
+        )
         if not classroom_raw or classroom_raw.lower() == "nan":
             classroom_raw = course_code
 
@@ -1170,6 +1209,17 @@ def plan_courses(session_data: dict) -> dict:
         # Step 4: Save to Excel
         print("[PLANNER] Step 4: Saving to Excel...")
         rows = [session.model_dump() for session in result.sessions]
+        location_lookup = _load_trainer_locations()
+        classroom_assignments = _load_classroom_assignments()
+        for row in rows:
+            trainer_name = row["trainer_name"]
+            row["location"] = _trainer_location(trainer_name, location_lookup)
+            row["training_room"] = _classroom_for_session(
+                row["course_code"],
+                trainer_name,
+                classroom_assignments,
+                location_lookup,
+            )
         result_df = pd.DataFrame(rows)
 
         os.makedirs(OUTPUT_DIR, exist_ok=True)
