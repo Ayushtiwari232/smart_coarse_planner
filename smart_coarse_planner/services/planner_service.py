@@ -27,11 +27,14 @@ def _count_tokens(text: str, model: str = "gpt-4o") -> int:
     return len(enc.encode(text))
 
 INPUT_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "input")
-_DEFAULT_OUTPUT_DIR = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "data", "output")
-)
+
+# Azure Functions deploys application files under /home/site/wwwroot, which is
+# read-only. Use HOME on Azure and /tmp during local development instead.
+_HOME_BASE = os.path.join(os.environ.get("HOME", ""), "smart_planner", "output") if os.environ.get("HOME") else None
+_DEFAULT_OUTPUT_DIR = _HOME_BASE or os.path.join(tempfile.gettempdir(), "smart_planner", "output")
 OUTPUT_DIR = os.environ.get("SMART_PLANNER_OUTPUT_DIR") or _DEFAULT_OUTPUT_DIR
 
+<<<<<<< HEAD
 TRAINER_LEAVE_FILE = "Holidays Q1_2027.xlsx"
 PRIORITY_FILE = "priority_to_train_list.xlsx"
 LOCATION_FILE = "Smart course planner Trainer per location.xlsx"
@@ -61,9 +64,9 @@ class CoursePlan(BaseModel):
 
 
 def _load_trainer_leave_dates() -> tuple[list[dict], str]:
-    """Load trainer leave ranges from the Q1 2027 horizontal holiday roster."""
+    """Load trainer leave/holiday dates from trainer_holidays_sep_to_dec_2026.xlsx."""
     path = os.path.join(INPUT_DIR, TRAINER_LEAVE_FILE)
-    df = pd.read_excel(path, header=None)
+    df = pd.read_excel(path)
 
     trainers = []
     for start_column in range(1, len(df.columns), 2):

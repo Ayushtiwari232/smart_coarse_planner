@@ -32,15 +32,15 @@ _DEFAULT_OUTPUT_DIR = os.path.abspath(
 )
 OUTPUT_DIR = os.environ.get("SMART_PLANNER_OUTPUT_DIR") or _DEFAULT_OUTPUT_DIR
 
-TRAINER_LEAVE_FILE = "Holidays Q1_2027.xlsx"
+TRAINER_LEAVE_FILE = "trainer_holidays_sep_to_dec_2026.xlsx"
 PRIORITY_FILE = "priority_to_train_list.xlsx"
 LOCATION_FILE = "Smart course planner Trainer per location.xlsx"
 TRAINERS_JSON_FILE = "trainers.json"
 COURSE_SCHEDULE_FILE = "course_schedule_days.xlsx"
 
-# Planning period: Q1 2027
-PLANNING_START = date(2027, 1, 1)
-PLANNING_END = date(2027, 3, 31)
+# Planning period: September to December 2026
+PLANNING_START = date(2026, 9, 1)
+PLANNING_END = date(2026, 12, 31)
 
 
 # --- Pydantic models for structured LLM output ---
@@ -61,28 +61,27 @@ class CoursePlan(BaseModel):
 
 
 def _load_trainer_leave_dates() -> tuple[list[dict], str]:
-    """Load trainer leave ranges from the Q1 2027 horizontal holiday roster."""
+    """Load trainer leave/holiday dates from trainer_holidays_sep_to_dec_2026.xlsx."""
     path = os.path.join(INPUT_DIR, TRAINER_LEAVE_FILE)
-    df = pd.read_excel(path, header=None)
+    df = pd.read_excel(path)
 
     trainers = []
-    for start_column in range(1, len(df.columns), 2):
-        trainer_name = df.iloc[0, start_column]
+    for _, row in df.iterrows():
+        trainer_name = row.get("Trainer Name")
         if pd.isna(trainer_name):
             continue
 
+        raw_leave_dates = row.get("Holiday / Leave Dates (2026)")
         leave_dates = []
-        for row_index in range(2, len(df)):
-            start = pd.to_datetime(df.iloc[row_index, start_column], errors="coerce")
-            end = pd.to_datetime(df.iloc[row_index, start_column + 1], errors="coerce")
-            if pd.isna(start) or pd.isna(end):
-                continue
-
-            current_date = start.date()
-            while current_date <= end.date():
-                if PLANNING_START <= current_date <= PLANNING_END:
-                    leave_dates.append(current_date.isoformat())
-                current_date += timedelta(days=1)
+        if not pd.isna(raw_leave_dates):
+            for raw_date in str(raw_leave_dates).split(","):
+                raw_date = raw_date.strip()
+                # Format is "09 September" — append year 2026 for parsing
+                parsed_date = pd.to_datetime(
+                    f"{raw_date} 2026", format="%d %B %Y", errors="coerce"
+                )
+                if not pd.isna(parsed_date):
+                    leave_dates.append(parsed_date.strftime("%Y-%m-%d"))
 
         trainers.append(
             {
@@ -356,7 +355,23 @@ def _write_trainer_availability_sheet(
     # --- Extra data ---
     location_lookup = _load_trainer_locations()
     parttime_lookup = _load_parttime_days_from_json()
-    start_d, end_d = PLANNING_START, PLANNING_END
+    plan_start, plan_end = _get_planning_period_from_json()
+
+    # --- Date range (planning quarter, not full year) ---
+    if plan_start and plan_end:
+        start_d, end_d = plan_start, plan_end
+    else:
+        all_dates: list[date] = []
+        for s in sessions:
+            for key in ("start_date", "end_date"):
+                parsed = pd.to_datetime(s.get(key), errors="coerce")
+                if not pd.isna(parsed):
+                    all_dates.append(parsed.date())
+        if not all_dates:
+            print("[PLANNER] Skipping trainer availability sheet: no dates available")
+            return
+        start_d = date(min(all_dates).year, min(all_dates).month, 1)
+        end_d   = max(all_dates)
 
     date_list: list[date] = []
     cur = start_d
@@ -610,7 +625,19 @@ def _write_lab_availability_sheet(output_path: str, sessions: list[dict]) -> Non
     location_lookup = _load_trainer_locations()
     classroom_assignments = _load_classroom_assignments()
 
-    plan_start, plan_end = PLANNING_START, PLANNING_END
+    plan_start, plan_end = _get_planning_period_from_json()
+    if not plan_start or not plan_end:
+        if not sessions:
+            return
+        sd_all = [pd.to_datetime(s.get("start_date"), errors="coerce").date()
+                  for s in sessions]
+        ed_all = [pd.to_datetime(s.get("end_date"),   errors="coerce").date()
+                  for s in sessions]
+        sd_all = [d for d in sd_all if d]
+        ed_all = [d for d in ed_all if d]
+        if not sd_all:
+            return
+        plan_start, plan_end = min(sd_all), max(ed_all)
 
     date_list: list[date] = []
     cur = plan_start
@@ -912,7 +939,9 @@ def _write_utilization_metrics_sheet(
     PCT_FORMAT = "0.0%"
 
     # --- Date range ---
-    plan_start, plan_end = PLANNING_START, PLANNING_END
+    plan_start, plan_end = _get_planning_period_from_json()
+    if not plan_start or not plan_end:
+        plan_start, plan_end = PLANNING_START, PLANNING_END
 
     # Count total working days (Mon-Fri) in the planning period
     all_working_days: list[date] = []
@@ -1122,7 +1151,7 @@ def plan_courses(session_data: dict) -> dict:
         trainers, leave_period = _load_trainer_leave_dates()
         priority_df = _load_trainer_priority()
 
-        # Use the configured Q1 2027 planning period.
+        # Use the Sep-Dec 2026 planning period
         period = f"{PLANNING_START} to {PLANNING_END}"
         print(f"[PLANNER] Loaded leave dates for {len(trainers)} trainers, planning period: {period}")
 
