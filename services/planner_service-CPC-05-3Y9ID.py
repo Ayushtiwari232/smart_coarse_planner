@@ -32,15 +32,15 @@ _DEFAULT_OUTPUT_DIR = os.path.abspath(
 )
 OUTPUT_DIR = os.environ.get("SMART_PLANNER_OUTPUT_DIR") or _DEFAULT_OUTPUT_DIR
 
-TRAINER_LEAVE_FILE = "Holidays Q1_2027.xlsx"
+TRAINER_LEAVE_FILE = "trainer_holidays_sep_to_dec_2026.xlsx"
 PRIORITY_FILE = "priority_to_train_list.xlsx"
 LOCATION_FILE = "Smart course planner Trainer per location.xlsx"
 TRAINERS_JSON_FILE = "trainers.json"
 COURSE_SCHEDULE_FILE = "course_schedule_days.xlsx"
 
-# Planning period: Q1 2027
-PLANNING_START = date(2027, 1, 1)
-PLANNING_END = date(2027, 3, 31)
+# Planning period: September to December 2026
+PLANNING_START = date(2026, 9, 1)
+PLANNING_END = date(2026, 12, 31)
 
 
 # --- Pydantic models for structured LLM output ---
@@ -61,28 +61,27 @@ class CoursePlan(BaseModel):
 
 
 def _load_trainer_leave_dates() -> tuple[list[dict], str]:
-    """Load trainer leave ranges from the Q1 2027 horizontal holiday roster."""
+    """Load trainer leave/holiday dates from trainer_holidays_sep_to_dec_2026.xlsx."""
     path = os.path.join(INPUT_DIR, TRAINER_LEAVE_FILE)
-    df = pd.read_excel(path, header=None)
+    df = pd.read_excel(path)
 
     trainers = []
-    for start_column in range(1, len(df.columns), 2):
-        trainer_name = df.iloc[0, start_column]
+    for _, row in df.iterrows():
+        trainer_name = row.get("Trainer Name")
         if pd.isna(trainer_name):
             continue
 
+        raw_leave_dates = row.get("Holiday / Leave Dates (2026)")
         leave_dates = []
-        for row_index in range(2, len(df)):
-            start = pd.to_datetime(df.iloc[row_index, start_column], errors="coerce")
-            end = pd.to_datetime(df.iloc[row_index, start_column + 1], errors="coerce")
-            if pd.isna(start) or pd.isna(end):
-                continue
-
-            current_date = start.date()
-            while current_date <= end.date():
-                if PLANNING_START <= current_date <= PLANNING_END:
-                    leave_dates.append(current_date.isoformat())
-                current_date += timedelta(days=1)
+        if not pd.isna(raw_leave_dates):
+            for raw_date in str(raw_leave_dates).split(","):
+                raw_date = raw_date.strip()
+                # Format is "09 September" — append year 2026 for parsing
+                parsed_date = pd.to_datetime(
+                    f"{raw_date} 2026", format="%d %B %Y", errors="coerce"
+                )
+                if not pd.isna(parsed_date):
+                    leave_dates.append(parsed_date.strftime("%Y-%m-%d"))
 
         trainers.append(
             {
@@ -178,6 +177,57 @@ def _load_trainer_locations() -> dict[str, dict]:
     except Exception as e:
         print(f"[PLANNER] WARNING: Could not load location file: {e}")
         return {}
+
+
+def _trainer_location(trainer_name: str, location_lookup: dict[str, dict]) -> str:
+    """Return the trainer's assigned location, or Others when it is unknown."""
+    for alias in _trainer_name_aliases(trainer_name):
+        if alias in location_lookup:
+            return location_lookup[alias]["location"]
+    return "Others"
+
+
+def _load_classroom_assignments() -> dict[str, dict[str, str]]:
+    """Load default and CTC-specific classroom assignments by course code.
+
+    The CTC room column is optional to retain compatibility with older schedule files.
+    """
+    path = os.path.join(INPUT_DIR, COURSE_SCHEDULE_FILE)
+    try:
+        schedule_df = pd.read_excel(path)
+        normalized_columns = {
+            " ".join(str(column).strip().lower().split()): column
+            for column in schedule_df.columns
+        }
+        ctc_room_column = normalized_columns.get("ctc training rooms per class")
+        assignments: dict[str, dict[str, str]] = {}
+        for _, row in schedule_df.iterrows():
+            course_code = str(row.get("Course Code", "")).strip()
+            if not course_code or course_code.lower() == "nan" or course_code in assignments:
+                continue
+            default_room = str(row.get("Preferred Classroom", "")).strip()
+            ctc_room = str(row.get(ctc_room_column, "")).strip() if ctc_room_column else ""
+            assignments[course_code] = {
+                "default": "" if default_room.lower() == "nan" else default_room,
+                "ctc": "" if ctc_room.lower() == "nan" else ctc_room,
+            }
+        return assignments
+    except Exception as e:
+        print(f"[PLANNER] WARNING: Could not load classroom assignments: {e}")
+        return {}
+
+
+def _classroom_for_session(
+    course_code: str,
+    trainer_name: str,
+    classroom_assignments: dict[str, dict[str, str]],
+    location_lookup: dict[str, dict],
+) -> str:
+    """Choose the CTC room for CTC trainers; otherwise choose the default room."""
+    rooms = classroom_assignments.get(course_code, {})
+    if _trainer_location(trainer_name, location_lookup) == "CTC" and rooms.get("ctc"):
+        return rooms["ctc"]
+    return rooms.get("default", "")
 
 
 def _load_parttime_days_from_json() -> dict[str, set]:
@@ -305,7 +355,23 @@ def _write_trainer_availability_sheet(
     # --- Extra data ---
     location_lookup = _load_trainer_locations()
     parttime_lookup = _load_parttime_days_from_json()
-    start_d, end_d = PLANNING_START, PLANNING_END
+    plan_start, plan_end = _get_planning_period_from_json()
+
+    # --- Date range (planning quarter, not full year) ---
+    if plan_start and plan_end:
+        start_d, end_d = plan_start, plan_end
+    else:
+        all_dates: list[date] = []
+        for s in sessions:
+            for key in ("start_date", "end_date"):
+                parsed = pd.to_datetime(s.get(key), errors="coerce")
+                if not pd.isna(parsed):
+                    all_dates.append(parsed.date())
+        if not all_dates:
+            print("[PLANNER] Skipping trainer availability sheet: no dates available")
+            return
+        start_d = date(min(all_dates).year, min(all_dates).month, 1)
+        end_d   = max(all_dates)
 
     date_list: list[date] = []
     cur = start_d
@@ -556,17 +622,22 @@ def _write_lab_availability_sheet(output_path: str, sessions: list[dict]) -> Non
         print(f"[PLANNER] WARNING: Could not load course schedule for lab sheet: {e}")
         return
 
-    # Build course → first classroom raw string
-    classroom_lookup: dict[str, str] = {}
-    for _, row in schedule_df.iterrows():
-        code = str(row.get("Course Code", "")).strip()
-        raw  = str(row.get("Preferred Classroom", "")).strip()
-        if code and raw and raw.lower() != "nan" and code not in classroom_lookup:
-            classroom_lookup[code] = raw
-
     location_lookup = _load_trainer_locations()
+    classroom_assignments = _load_classroom_assignments()
 
-    plan_start, plan_end = PLANNING_START, PLANNING_END
+    plan_start, plan_end = _get_planning_period_from_json()
+    if not plan_start or not plan_end:
+        if not sessions:
+            return
+        sd_all = [pd.to_datetime(s.get("start_date"), errors="coerce").date()
+                  for s in sessions]
+        ed_all = [pd.to_datetime(s.get("end_date"),   errors="coerce").date()
+                  for s in sessions]
+        sd_all = [d for d in sd_all if d]
+        ed_all = [d for d in ed_all if d]
+        if not sd_all:
+            return
+        plan_start, plan_end = min(sd_all), max(ed_all)
 
     date_list: list[date] = []
     cur = plan_start
@@ -588,15 +659,13 @@ def _write_lab_availability_sheet(output_path: str, sessions: list[dict]) -> Non
         if pd.isna(sd) or pd.isna(ed):
             continue
 
-        classroom_raw = classroom_lookup.get(course_code, "")
+        classroom_raw = _classroom_for_session(
+            course_code, trainer_name, classroom_assignments, location_lookup
+        )
         if not classroom_raw or classroom_raw.lower() == "nan":
             classroom_raw = course_code  # fallback: use course code as lab identifier
 
-        trainer_loc = "Others"
-        for alias in _trainer_name_aliases(trainer_name):
-            if alias in location_lookup:
-                trainer_loc = location_lookup[alias]["location"]
-                break
+        trainer_loc = _trainer_location(trainer_name, location_lookup)
 
         for lab, lab_start, lab_end in _parse_classrooms(classroom_raw, sd.date(), ed.date()):
             lab_locations.setdefault(lab, trainer_loc)
@@ -870,7 +939,9 @@ def _write_utilization_metrics_sheet(
     PCT_FORMAT = "0.0%"
 
     # --- Date range ---
-    plan_start, plan_end = PLANNING_START, PLANNING_END
+    plan_start, plan_end = _get_planning_period_from_json()
+    if not plan_start or not plan_end:
+        plan_start, plan_end = PLANNING_START, PLANNING_END
 
     # Count total working days (Mon-Fri) in the planning period
     all_working_days: list[date] = []
@@ -961,17 +1032,7 @@ def _write_utilization_metrics_sheet(
         })
 
     # --- Lab/Room Utilization ---
-    schedule_path = os.path.join(INPUT_DIR, COURSE_SCHEDULE_FILE)
-    classroom_lookup: dict[str, str] = {}
-    try:
-        schedule_df = pd.read_excel(schedule_path)
-        for _, row in schedule_df.iterrows():
-            code = str(row.get("Course Code", "")).strip()
-            raw = str(row.get("Preferred Classroom", "")).strip()
-            if code and raw and raw.lower() != "nan" and code not in classroom_lookup:
-                classroom_lookup[code] = raw
-    except Exception:
-        pass
+    classroom_assignments = _load_classroom_assignments()
 
     lab_booked_days: dict[str, set] = {}
     for s in sessions:
@@ -981,7 +1042,12 @@ def _write_utilization_metrics_sheet(
         if pd.isna(sd) or pd.isna(ed):
             continue
 
-        classroom_raw = classroom_lookup.get(course_code, "")
+        classroom_raw = _classroom_for_session(
+            course_code,
+            str(s.get("trainer_name", "")).strip(),
+            classroom_assignments,
+            location_lookup,
+        )
         if not classroom_raw or classroom_raw.lower() == "nan":
             classroom_raw = course_code
 
@@ -1085,7 +1151,7 @@ def plan_courses(session_data: dict) -> dict:
         trainers, leave_period = _load_trainer_leave_dates()
         priority_df = _load_trainer_priority()
 
-        # Use the configured Q1 2027 planning period.
+        # Use the Sep-Dec 2026 planning period
         period = f"{PLANNING_START} to {PLANNING_END}"
         print(f"[PLANNER] Loaded leave dates for {len(trainers)} trainers, planning period: {period}")
 
@@ -1141,6 +1207,17 @@ def plan_courses(session_data: dict) -> dict:
         # Step 4: Save to Excel
         print("[PLANNER] Step 4: Saving to Excel...")
         rows = [session.model_dump() for session in result.sessions]
+        location_lookup = _load_trainer_locations()
+        classroom_assignments = _load_classroom_assignments()
+        for row in rows:
+            trainer_name = row["trainer_name"]
+            row["location"] = _trainer_location(trainer_name, location_lookup)
+            row["training_room"] = _classroom_for_session(
+                row["course_code"],
+                trainer_name,
+                classroom_assignments,
+                location_lookup,
+            )
         result_df = pd.DataFrame(rows)
 
         os.makedirs(OUTPUT_DIR, exist_ok=True)

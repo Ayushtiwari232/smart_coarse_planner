@@ -12,7 +12,7 @@ app = FastAPI(title="Smart Course Planner")
 
 APP_VERSION = "2026-07-20-v2"
 
-DEFAULT_INPUT_FILE = Path(__file__).resolve().parent / "data" / "input" / "srl_and_wl.xlsx"
+DEFAULT_INPUT_FILE = Path(__file__).resolve().parent / "data" / "input" / "New SRL and WL for Students_51_9219480390659314172.xlsx"
 
 
 class PlanRequest(BaseModel):

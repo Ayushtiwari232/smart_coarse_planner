@@ -14,7 +14,7 @@ DEFAULT_INPUT_FILE = (
     BASE_DIR
     / "data"
     / "input"
-    / "srl_and_wl.xlsx"
+    / "New SRL and WL for Students_51_9219480390659314172.xlsx"
 )
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
