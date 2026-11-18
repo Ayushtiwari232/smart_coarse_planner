@@ -1,79 +1,59 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/azure/functions-action
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-# More info on Python, GitHub Actions, and Azure Functions: https://aka.ms/python-webapps-actions
-
-name: Build and deploy Python project to Azure Function App - smart-course-planner
+name: Test and deploy course planner
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+  pull_request:
   workflow_dispatch:
 
-env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: "." # set this to the path to your web app project, defaults to the repository root
-  PYTHON_VERSION: "3.13" # set this to the python version to use
+permissions:
+  contents: read
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read #This is required for actions/checkout
-
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Python version
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: ${{ matrix.python-version }}
+      - run: python -m pip install -c constraints.txt -e ".[dev]"
+      - run: python -m ruff check src tests tools main.py function_app.py
+      - run: python -m ruff format --check src tests tools main.py function_app.py
+      - run: python -m pyright
+      - run: python -m unittest discover -s tests -v
+      - run: python -c "import main, function_app"
 
-      # Optional: Add step to run tests here
-
-      - name: Zip artifact for deployment
-        run: |
-          cd smart_coarse_planner
-          zip -r ../release.zip * .funcignore \
-            -x "venv/*" \
-            -x ".venv/*" \
-            -x "env/*" \
-            -x "__pycache__/*" \
-            -x "*/__pycache__/*" \
-            -x ".python_packages/*" \
-            -x "data/output/*" \
-            -x "dist/*" \
-            -x "build/*" \
-            -x "*.egg-info/*"
-
-      - name: Verify zip contents
-        run: zipinfo release.zip | head -20
-
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v4
+  package:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
-          name: python-app
-          path: |
-            release.zip
-            !venv/
+          python-version: "3.13"
+      - run: python tools/build_release.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: planner-release
+          path: dist/release.zip
 
   deploy:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    needs: build
-
+    needs: package
+    environment: production
     steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v4
         with:
-          name: python-app
-
-      - name: "Deploy to Azure Functions"
-        uses: Azure/functions-action@v1
-        id: deploy-to-function
+          name: planner-release
+      - uses: Azure/functions-action@v1
         with:
-          app-name: "smart-course-planner"
-          slot-name: "Production"
+          app-name: smart-course-planner
           package: release.zip
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_50B4692A5D6942A2A30F76EFF243326F }}
-          sku: "flexconsumption"
+          sku: flexconsumption
           remote-build: true

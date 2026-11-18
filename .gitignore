@@ -7,6 +7,7 @@ env/
 # Environment variables
 .env
 .env.*
+!.env.example
 
 # Python cache
 __pycache__/
@@ -15,6 +16,9 @@ __pycache__/
 
 # Output data
 data/output/
+data/quarters/
+data/archive/
+runs/
 
 # IDE / Editor
 .vscode/
@@ -40,6 +44,7 @@ local.settings.json
 
 # Logs
 *.log
+.ruff_cache/
 
 # Byte-compiled
 *$py.class

@@ -14,3 +14,11 @@ data/output/
 dist/
 build/
 *.egg-info/
+tests/
+tools/
+data/
+runs/
+docs/
+cleveland_planner/
+smart_coarse_planner/
+local.settings.json
